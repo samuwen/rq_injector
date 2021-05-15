@@ -1,0 +1,25 @@
+[package]
+name = "rq_injector"
+version = "0.1.0"
+authors = ["Mark Chaitin <markchaitin@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+glib = "0.10.3"
+gtk = "0.9.2"
+gio = "0.9.1"
+gdk = "0.13.2"
+gdk-pixbuf = "0.9.0"
+log = "0.4.14"
+flexi_logger = "0.17.1"
+derive_builder = "0.10.1"
+getset = "0.1.1"
+serde = { version = "1.0.125", features = ["derive"] }
+reqwest = { version = "0.11.3", features = ["blocking"] }
+chrono = "0.4.19"
+zip = "0.5.12"
+quick-xml = { version = "0.22.0", features = ["serialize"] }
+bytes = "1.0.1"
+crc = "1.8.1"

@@ -1,0 +1,5 @@
+/target
+*.glade~
+installedMaps.xml
+config.xml
+data.xml
