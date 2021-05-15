@@ -1,6 +1,7 @@
 use crate::app::QInjector;
 use crate::connect_config_dialog;
 use crate::connect_detail_buttons;
+use crate::connect_output_dialog;
 use crate::connect_quit::*;
 use crate::gui_data::GuiData;
 use crate::quake_file::*;
@@ -24,6 +25,7 @@ pub fn initialize_gui(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
 
     initialize_dialog_connectors(gui_data, app.clone());
     initialize_detail_buttons(gui_data, app);
+    initialize_output_dialog(gui_data);
 }
 
 fn create_list_view(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
@@ -132,4 +134,9 @@ fn initialize_dialog_connectors(gui_data: &GuiData, app: Rc<RefCell<QInjector>>)
 fn initialize_detail_buttons(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
     connect_detail_buttons::connect_install_map(gui_data, app.clone());
     connect_detail_buttons::connect_uninstall_map(gui_data, app.clone());
+    connect_detail_buttons::connect_play_button(gui_data, app.clone());
+}
+
+fn initialize_output_dialog(gui_data: &GuiData) {
+    connect_output_dialog::connect_ok(gui_data);
 }

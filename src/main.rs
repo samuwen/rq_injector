@@ -3,6 +3,7 @@ mod config_dialog;
 mod configuration;
 mod connect_config_dialog;
 mod connect_detail_buttons;
+mod connect_output_dialog;
 mod connect_quit;
 mod detail_pane;
 mod filter_bar;
@@ -10,6 +11,7 @@ mod gui_data;
 mod initialize_gui;
 mod list_view;
 mod main_menu;
+mod output_dialog;
 mod quake_file;
 
 use app::initialize_application;

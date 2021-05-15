@@ -49,6 +49,33 @@ pub fn connect_uninstall_map(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
     });
 }
 
+pub fn connect_play_button(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
+    let button = gui_data.detail_pane.btn_play.clone();
+    let gui_data = gui_data.clone();
+    let dropdown = gui_data.detail_pane.dropdown.clone();
+    let output_dialog = gui_data.output_dialog.dlg_output.clone();
+    let output_text = gui_data.output_dialog.txt_output.clone();
+    button.connect_clicked(move |_| {
+        let model = dropdown.get_model().unwrap();
+        let iter = dropdown.get_active_iter().unwrap();
+        let string_res: Result<Option<String>, glib::value::GetError> =
+            model.get_value(&iter, 0).get();
+        let start_map = string_res.unwrap().unwrap();
+        let id = get_selected_map_id(&gui_data);
+        let result = app.borrow().play_quake_map(&id, &start_map).unwrap();
+        let text: String = result
+            .stdout
+            .iter()
+            .map(|b| match b.is_ascii() {
+                true => *b as char,
+                false => ' ',
+            })
+            .collect();
+        output_text.get_buffer().unwrap().set_text(&text);
+        output_dialog.show_all();
+    });
+}
+
 fn set_installed_state(gui_data: &GuiData, app: Rc<RefCell<QInjector>>, is_local: bool) {
     let install_button = gui_data.detail_pane.btn_install.clone();
     let uninstall_button = gui_data.detail_pane.btn_uninstall.clone();

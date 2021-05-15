@@ -1,7 +1,5 @@
-use crate::app::QInjector;
 use gtk::prelude::*;
 use gtk::{Builder, Button, CheckButton, Dialog, Entry};
-use log::*;
 
 #[derive(Clone)]
 pub struct ConfigDialog {

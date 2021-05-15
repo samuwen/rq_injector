@@ -282,8 +282,7 @@ impl QInjector {
         }
     }
 
-    pub fn play_quake_map(&self, id: &String, start_map: String) -> std::io::Result<Output> {
-        // not sure if we should do anything with the output we get
+    pub fn play_quake_map(&self, id: &String, start_map: &String) -> std::io::Result<Output> {
         let exe = self.config.quake_exe();
         let dir = self.config.quake_dir();
         info!("Attempting to play game: {}", id);

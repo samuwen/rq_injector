@@ -1,7 +1,7 @@
 use crate::quake_file::QuakeFile;
 use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
-use gtk::{Builder, Button, Image, Label, ScrolledWindow};
+use gtk::{Builder, Button, ComboBoxText, Image, Label, ScrolledWindow};
 use log::*;
 
 #[derive(Clone)]
@@ -15,6 +15,7 @@ pub struct DetailPane {
     pub lbl_date: Label,
     pub lbl_size: Label,
     pub sw_details: ScrolledWindow,
+    pub dropdown: ComboBoxText,
 }
 
 impl DetailPane {
@@ -47,6 +48,9 @@ impl DetailPane {
         let lbl_size: Label = builder
             .get_object("lbl_size")
             .expect("Failed to get lbl_size");
+        let dropdown: ComboBoxText = builder
+            .get_object("start_combo_box")
+            .expect("Failed to get start_combo_box");
         Self {
             lbl_title,
             lbl_description,
@@ -57,6 +61,7 @@ impl DetailPane {
             sw_details,
             lbl_date,
             lbl_size,
+            dropdown,
         }
     }
 
@@ -74,6 +79,19 @@ impl DetailPane {
 
         self.img_current_map.set_from_pixbuf(Some(&pixbuf));
         self.img_current_map.set_visible(true);
+        let start_maps = file.tech_info().start_map();
+        self.dropdown.remove_all();
+        if start_maps.len() == 0 {
+            self.dropdown.append_text("start");
+        } else {
+            for map in start_maps {
+                self.dropdown.append_text(map);
+            }
+            let model = self.dropdown.get_model().unwrap();
+            let iter = model.get_iter_first().expect("nothing in dropdown");
+            self.dropdown.set_active_iter(Some(&iter));
+        }
+        self.dropdown.set_sensitive(start_maps.len() > 2);
     }
 }
 
