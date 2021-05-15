@@ -1,5 +1,7 @@
 mod app;
+mod config_dialog;
 mod configuration;
+mod connect_config_dialog;
 mod connect_install_map;
 mod connect_quit;
 mod detail_pane;

@@ -1,4 +1,5 @@
 use crate::app::QInjector;
+use crate::connect_config_dialog;
 use crate::connect_install_map::connect_install_map;
 use crate::connect_quit::connect_menu_quit;
 use crate::gui_data::GuiData;
@@ -18,6 +19,7 @@ pub fn initialize_gui(gui_data: &GuiData, app: &QInjector) {
     create_list_view(gui_data, app);
     connect_menu_quit(gui_data);
     connect_install_map(gui_data, app);
+    initialize_dialog_connectors(gui_data, app);
 }
 
 fn create_list_view(gui_data: &GuiData, app: &QInjector) {
@@ -105,4 +107,11 @@ fn create_text_column(
     column.pack_start(renderer, true);
     column.add_attribute(renderer, "text", col_int);
     column
+}
+
+fn initialize_dialog_connectors(gui_data: &GuiData, app: &QInjector) {
+    connect_config_dialog::connect_activate(gui_data);
+    connect_config_dialog::connect_cancel(gui_data);
+    let mut app = app.clone();
+    connect_config_dialog::connect_ok(gui_data, &mut app);
 }

@@ -1,9 +1,10 @@
+use crate::config_dialog::ConfigDialog;
 use crate::detail_pane::DetailPane;
 use crate::filter_bar::FilterBar;
 use crate::list_view::ListView;
 use crate::main_menu::MainMenu;
 use gtk::prelude::*;
-use gtk::{Builder, ScrolledWindow, Window};
+use gtk::{Builder, Window};
 
 #[derive(Clone)]
 pub struct GuiData {
@@ -15,6 +16,7 @@ pub struct GuiData {
     pub filter_bar: FilterBar,
     pub detail_pane: DetailPane,
     pub list_view: ListView,
+    pub config_dialog: ConfigDialog,
 }
 
 impl GuiData {
@@ -29,9 +31,7 @@ impl GuiData {
         let filter_bar = FilterBar::create_from_builder(&builder);
         let detail_pane = DetailPane::create_from_builder(&builder);
         let list_view = ListView::create_from_builder(&builder);
-        let sw_list: ScrolledWindow = builder
-            .get_object("sw_list")
-            .expect("Failed to get sw_list");
+        let config_dialog = ConfigDialog::create_from_builder(&builder);
         window.set_position(gtk::WindowPosition::CenterAlways);
         window.show_all();
         {
@@ -50,6 +50,7 @@ impl GuiData {
             filter_bar,
             detail_pane,
             list_view,
+            config_dialog,
         }
     }
 }
