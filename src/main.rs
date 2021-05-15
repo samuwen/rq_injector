@@ -1,15 +1,17 @@
+mod app;
 mod configuration;
+mod connect_install_map;
 mod connect_quit;
+mod detail_pane;
+mod filter_bar;
 mod gui_data;
 mod initialize_gui;
+mod list_view;
+mod main_menu;
 mod quake_file;
 
-use configuration::{Configuration, LocalMaps};
-use connect_quit::connect_menu_quit;
+use app::initialize_application;
 use flexi_logger::{LevelFilter, LogSpecBuilder, Logger};
-use gui_data::GuiData;
-use initialize_gui::initialize_gui;
-use quake_file::{initialize_data, QuakeFile};
 
 fn main() {
     let mut log_builder = LogSpecBuilder::new();
@@ -24,9 +26,7 @@ fn main() {
         .set_palette("196;208;-;7;10".to_string())
         .start()
         .unwrap_or_else(|e| panic!("Logger initialization failed with {}", e));
-    let data = initialize_data();
     gtk::init().expect("Failed to init gtk");
-    let gui_data = GuiData::new();
-    initialize_gui(&gui_data, &data);
+    initialize_application();
     gtk::main();
 }

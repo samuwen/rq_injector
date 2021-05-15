@@ -11,7 +11,7 @@ use std::io::{BufReader, Write};
 const CONFIG_FILE_PATH: &str = "config.xml";
 const LOCAL_MAPS_FILE_PATH: &str = "installedMaps.xml";
 
-#[derive(Default, Debug, Deserialize, Getters, Serialize, Setters)]
+#[derive(Clone, Default, Debug, Deserialize, Getters, Serialize, Setters)]
 #[getset(get = "pub", set = "pub")]
 pub struct Configuration {
     quake_dir: String,

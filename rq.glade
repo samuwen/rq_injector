@@ -212,7 +212,12 @@
                               <object class="GtkLabel" id="lbl_title">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Honk</property>
+                                <property name="margin_top">10</property>
+                                <property name="margin_bottom">10</property>
+                                <property name="justify">center</property>
+                                <attributes>
+                                  <attribute name="font-desc" value="Nimbus Roman, 16"/>
+                                </attributes>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -221,12 +226,10 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="lbl_description">
-                                <property name="visible">True</property>
+                              <object class="GtkImage" id="img_current_map">
                                 <property name="can_focus">False</property>
-                                <property name="vexpand">True</property>
-                                <property name="label" translatable="yes">When in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shitWhen in the course of human events it becomes necessary to do shit</property>
-                                <property name="wrap">True</property>
+                                <property name="no_show_all">True</property>
+                                <property name="stock">gtk-missing-image</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -235,10 +238,15 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkImage" id="img_current_map">
+                              <object class="GtkLabel" id="lbl_description">
+                                <property name="width_request">400</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="stock">gtk-missing-image</property>
+                                <property name="margin_left">4</property>
+                                <property name="margin_right">4</property>
+                                <property name="vexpand">True</property>
+                                <property name="label" translatable="yes">	</property>
+                                <property name="wrap">True</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -271,6 +279,7 @@
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="hexpand">True</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -284,6 +293,7 @@
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="hexpand">True</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -297,6 +307,7 @@
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="hexpand">True</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -309,6 +320,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="hexpand">True</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>

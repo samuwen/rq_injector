@@ -1,4 +1,4 @@
-use crate::LocalMaps;
+use crate::configuration::LocalMaps;
 use getset::Getters;
 use log::*;
 use quick_xml::de::{from_reader, DeError};
@@ -6,14 +6,13 @@ use serde::Deserialize;
 use std::fs::File;
 use std::io::{BufReader, Read};
 
-pub fn initialize_data() -> Vec<QuakeFile> {
+pub fn initialize_data(local_maps: &LocalMaps) -> Vec<QuakeFile> {
     let file = File::open("data.xml").expect("file not found");
     let reader = BufReader::new(file);
-    let local_maps = LocalMaps::new();
-    read_datastore(reader, &local_maps).files().clone()
+    read_datastore(reader, local_maps).files().clone()
 }
 
-pub fn read_datastore<R: Read>(reader: BufReader<R>, local_maps: &LocalMaps) -> Files {
+fn read_datastore<R: Read>(reader: BufReader<R>, local_maps: &LocalMaps) -> Files {
     trace!("Reading the data file");
     let file_result: Result<Files, DeError> = from_reader(reader);
     let files: Files = match file_result {
