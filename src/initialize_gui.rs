@@ -1,10 +1,12 @@
 use crate::app::QInjector;
 use crate::connect_config_dialog;
-use crate::connect_install_map::connect_install_map;
-use crate::connect_quit::connect_menu_quit;
+use crate::connect_detail_buttons;
+use crate::connect_quit::*;
 use crate::gui_data::GuiData;
 use crate::quake_file::*;
 use gtk::prelude::*;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 enum Columns {
     Installed = 0,
@@ -15,18 +17,20 @@ enum Columns {
     Rating,
 }
 
-pub fn initialize_gui(gui_data: &GuiData, app: &QInjector) {
-    create_list_view(gui_data, app);
+pub fn initialize_gui(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
+    create_list_view(gui_data, app.clone());
     connect_menu_quit(gui_data);
-    connect_install_map(gui_data, app);
-    initialize_dialog_connectors(gui_data, app);
+    connect_close(gui_data, app.clone());
+
+    initialize_dialog_connectors(gui_data, app.clone());
+    initialize_detail_buttons(gui_data, app);
 }
 
-fn create_list_view(gui_data: &GuiData, app: &QInjector) {
+fn create_list_view(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
     let sw_list = gui_data.list_view.sw_list.clone();
     let list_store = gui_data.list_view.list_store.clone();
     let tree_view = gui_data.list_view.tree_view.clone();
-    populate_list_view(&list_store, app.files());
+    populate_list_view(&list_store, app.borrow().files());
     tree_view
         .get_selection()
         .set_mode(gtk::SelectionMode::Single);
@@ -37,16 +41,24 @@ fn create_list_view(gui_data: &GuiData, app: &QInjector) {
     sw_list.show_all();
 }
 
-fn handle_selection_change(gui_data: &GuiData, tree_view: &gtk::TreeView, app: &QInjector) {
+fn handle_selection_change(
+    gui_data: &GuiData,
+    tree_view: &gtk::TreeView,
+    app: Rc<RefCell<QInjector>>,
+) {
     let detail_pane = gui_data.detail_pane.clone();
-    let app = app.clone();
     tree_view.get_selection().connect_changed(move |sel| {
         let (model, iter) = sel.get_selected().unwrap();
         let string_res: Result<Option<String>, glib::value::GetError> =
             model.get_value(&iter, 1).get();
         let id_string = string_res.unwrap().unwrap();
-        let file = app.files().iter().find(|f| f.id() == &id_string).unwrap();
-        let pixbuf = app.load_map_image(id_string);
+        let borrow = app.borrow();
+        let file = borrow
+            .files()
+            .iter()
+            .find(|f| f.id() == &id_string)
+            .unwrap();
+        let pixbuf = app.borrow().load_map_image(id_string);
         detail_pane.update(&file, pixbuf);
     });
 }
@@ -55,7 +67,7 @@ fn populate_list_view(list_store: &gtk::ListStore, data: &Vec<QuakeFile>) {
     let col_indices = [0, 1, 2, 3, 4, 5];
     for file in data {
         let values: [&dyn ToValue; 6] = [
-            &false,
+            file.installed_locally(),
             file.id(),
             file.title(),
             file.author(),
@@ -109,9 +121,15 @@ fn create_text_column(
     column
 }
 
-fn initialize_dialog_connectors(gui_data: &GuiData, app: &QInjector) {
-    connect_config_dialog::connect_activate(gui_data);
+fn initialize_dialog_connectors(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
+    connect_config_dialog::connect_activate(gui_data, app.clone());
     connect_config_dialog::connect_cancel(gui_data);
-    let mut app = app.clone();
-    connect_config_dialog::connect_ok(gui_data, &mut app);
+    connect_config_dialog::connect_ok(gui_data, app.clone());
+    connect_config_dialog::connect_selects(gui_data);
+    connect_config_dialog::connect_response(gui_data, app);
+}
+
+fn initialize_detail_buttons(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
+    connect_detail_buttons::connect_install_map(gui_data, app.clone());
+    connect_detail_buttons::connect_uninstall_map(gui_data, app.clone());
 }

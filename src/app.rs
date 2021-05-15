@@ -6,12 +6,14 @@ use bytes::Bytes;
 use getset::{Getters, Setters};
 use log::*;
 use reqwest::blocking::{ClientBuilder, Response};
+use std::cell::RefCell;
 use std::fmt::Display;
 use std::fs::File;
 use std::fs::{remove_file, write};
 use std::io::{BufReader, Read};
 use std::path::Path;
 use std::process::{Command, Output};
+use std::rc::Rc;
 use zip::read::ZipFile;
 use zip::ZipArchive;
 
@@ -21,8 +23,6 @@ pub struct QInjector {
     files: Vec<QuakeFile>,
     #[getset(get = "pub", set = "pub")]
     config: Configuration,
-    #[getset(get = "pub", set = "pub")]
-    current_file_id: String,
     #[getset(get = "pub")]
     local_maps: LocalMaps,
 }
@@ -69,18 +69,14 @@ impl QInjector {
     ///
     /// Returns option for two vectors, files that can be installed and files that have duplicate
     /// entries on the file system.
-    pub fn start_map_install(&mut self) -> Option<(Vec<String>, Vec<String>)> {
-        let bytes = match self.get_file_from_remote() {
+    pub fn start_map_install(&mut self, id: &String) -> Option<(Vec<String>, Vec<String>)> {
+        let bytes = match self.get_file_from_remote(id) {
             Some(b) => b,
             None => {
                 return None;
             }
         };
-        let path_str = format!(
-            "{}/{}.zip",
-            self.config.download_dir(),
-            self.current_file_id
-        );
+        let path_str = format!("{}/{}.zip", self.config.download_dir(), id);
         let path = Path::new(&path_str);
         if !self.write_file_to_disk(bytes, &path) {
             return None;
@@ -91,12 +87,9 @@ impl QInjector {
     /// Reaches out to the qaddicted server and retrieves a given map's zip file.
     ///
     /// Returns an option for raw bytes.
-    fn get_file_from_remote(&self) -> Option<bytes::Bytes> {
+    fn get_file_from_remote(&self, id: &String) -> Option<bytes::Bytes> {
         trace!("Getting file from remote");
-        let url = format!(
-            "https://www.quaddicted.com/filebase/{}.zip",
-            self.current_file_id
-        );
+        let url = format!("https://www.quaddicted.com/filebase/{}.zip", id,);
         debug!("Getting file from url: {}", url);
         let client = ClientBuilder::new()
             .timeout(std::time::Duration::from_secs(60))
@@ -208,15 +201,11 @@ impl QInjector {
         Some((files_to_extract, dupe_names))
     }
 
-    pub fn extract_data_from_zip(&mut self, to_install: &Vec<String>) -> bool {
+    pub fn extract_data_from_zip(&mut self, to_install: &Vec<String>, id: &String) -> bool {
         trace!("Extracting data from zip");
         let mut files = vec![];
         let extract_path = format!("{}/id1/maps", self.config.quake_dir());
-        let path_str = format!(
-            "{}/{}.zip",
-            self.config.download_dir(),
-            self.current_file_id
-        );
+        let path_str = format!("{}/{}.zip", self.config.download_dir(), id);
         let path = Path::new(&path_str);
         let mut archive = self.get_zip_archive(path).unwrap();
         info!("Starting zip extraction");
@@ -240,13 +229,13 @@ impl QInjector {
         match all_extracted {
             true => {
                 let map_pack = MapPackBuilder::default()
-                    .id(self.current_file_id.to_owned())
+                    .id(id.to_owned())
                     .files(files)
                     .build();
                 match map_pack {
                     Ok(pack) => {
                         self.local_maps.add_map(pack);
-                        debug!("Added {} to local maps", self.current_file_id);
+                        debug!("Added {} to local maps", id);
                         true
                     }
                     Err(e) => {
@@ -259,9 +248,8 @@ impl QInjector {
         }
     }
 
-    pub fn uninstall_map(&mut self) -> bool {
+    pub fn uninstall_map(&mut self, id: &String) -> bool {
         trace!("Uninstalling current selected map");
-        let id = self.current_file_id.to_owned();
         let map = match self.local_maps.get_map_by_id(&id) {
             Some(m) => m,
             None => {
@@ -279,20 +267,17 @@ impl QInjector {
                 }
             }
         });
-        self.local_maps.remove_map(id);
+        self.local_maps.remove_map(id.to_owned());
         true
     }
 
-    pub fn update_current_file_download_status(&mut self, status: bool) {
-        match self.get_mut_file_by_id(&self.current_file_id.to_owned()) {
+    pub fn update_current_file_download_status(&mut self, status: bool, id: &String) {
+        match self.get_mut_file_by_id(id) {
             Some(file) => {
                 file.set_is_local(status);
             }
             None => {
-                error!(
-                    "Attempting to get file by invalid id: {}",
-                    self.current_file_id
-                );
+                error!("Attempting to get file by invalid id: {}", id);
             }
         }
     }
@@ -301,7 +286,7 @@ impl QInjector {
         // not sure if we should do anything with the output we get
         let exe = self.config.quake_exe();
         let dir = self.config.quake_dir();
-        info!("Attempting to play game: {}", self.current_file_id);
+        info!("Attempting to play game: {}", id);
         debug!("start map: {}", start_map);
         let map = match self.get_file_by_id(id.to_owned()) {
             Some(m) => m,
@@ -421,13 +406,12 @@ pub fn initialize_application() {
     let config = Configuration::new();
     let local_maps = LocalMaps::new();
     let data = initialize_data(&local_maps);
-    let first_file = data.get(0).unwrap();
     let inj = QInjector {
         files: data.clone(),
         config,
         local_maps,
-        current_file_id: first_file.id().to_owned(),
     };
+    let inj = Rc::new(RefCell::new(inj));
     let gui_data = GuiData::new();
-    initialize_gui(&gui_data, &inj);
+    initialize_gui(&gui_data, inj);
 }
