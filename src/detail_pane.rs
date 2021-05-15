@@ -1,5 +1,8 @@
+use crate::quake_file::QuakeFile;
+use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use gtk::{Builder, Button, Image, Label, ScrolledWindow};
+use log::*;
 
 #[derive(Clone)]
 pub struct DetailPane {
@@ -9,11 +12,14 @@ pub struct DetailPane {
     pub btn_install: Button,
     pub btn_uninstall: Button,
     pub btn_play: Button,
+    pub lbl_date: Label,
+    pub lbl_size: Label,
     pub sw_details: ScrolledWindow,
 }
 
 impl DetailPane {
     pub fn create_from_builder(builder: &Builder) -> Self {
+        trace!("Initializing detail pane");
         let lbl_description: Label = builder
             .get_object("lbl_description")
             .expect("Failed to get lbl_description");
@@ -35,6 +41,12 @@ impl DetailPane {
         let sw_details: ScrolledWindow = builder
             .get_object("sw_details")
             .expect("Failed to get sw_detail");
+        let lbl_date: Label = builder
+            .get_object("lbl_date")
+            .expect("Failed to get lbl_date");
+        let lbl_size: Label = builder
+            .get_object("lbl_size")
+            .expect("Failed to get lbl_size");
         Self {
             lbl_title,
             lbl_description,
@@ -43,6 +55,31 @@ impl DetailPane {
             btn_install,
             btn_uninstall,
             sw_details,
+            lbl_date,
+            lbl_size,
         }
     }
+
+    pub fn update(&self, file: &QuakeFile, pixbuf: Pixbuf) {
+        trace!("Updating detail view");
+        self.lbl_title.set_text(file.title());
+        self.lbl_description.set_text(file.description());
+        self.lbl_date.set_text(file.date());
+        let size_text = convert_size_string(file.size());
+        self.lbl_size.set_text(&size_text);
+        let is_local = *file.installed_locally();
+        self.btn_install.set_sensitive(!is_local);
+        self.btn_uninstall.set_sensitive(is_local);
+        self.btn_play.set_sensitive(is_local);
+
+        self.img_current_map.set_from_pixbuf(Some(&pixbuf));
+        self.img_current_map.set_visible(true);
+    }
+}
+
+fn convert_size_string(size_string: &String) -> String {
+    let size_int = u32::from_str_radix(size_string, 10).unwrap();
+    let decimal = size_int as f64 / 1000.0;
+    trace!("Converted {} to {}", size_string, decimal);
+    format!("{} mb", decimal)
 }

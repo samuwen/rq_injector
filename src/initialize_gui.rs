@@ -36,27 +36,16 @@ fn create_list_view(gui_data: &GuiData, app: &QInjector) {
 }
 
 fn handle_selection_change(gui_data: &GuiData, tree_view: &gtk::TreeView, app: &QInjector) {
-    let title = gui_data.detail_pane.lbl_title.clone();
-    let image = gui_data.detail_pane.img_current_map.clone();
-    let desc = gui_data.detail_pane.lbl_description.clone();
-    let install_button = gui_data.detail_pane.btn_install.clone();
-    let uninstall_button = gui_data.detail_pane.btn_uninstall.clone();
-    let play_button = gui_data.detail_pane.btn_play.clone();
+    let detail_pane = gui_data.detail_pane.clone();
     let app = app.clone();
     tree_view.get_selection().connect_changed(move |sel| {
         let (model, iter) = sel.get_selected().unwrap();
         let string_res: Result<Option<String>, glib::value::GetError> =
             model.get_value(&iter, 1).get();
-        let string = string_res.unwrap().unwrap();
-        let file = app.files().iter().find(|f| f.id() == &string).unwrap();
-        title.set_text(file.title());
-        image.set_from_pixbuf(Some(&app.load_map_image(string)));
-        image.set_visible(true);
-        desc.set_text(file.description());
-        let is_local = *file.installed_locally();
-        install_button.set_sensitive(!is_local);
-        uninstall_button.set_sensitive(is_local);
-        play_button.set_sensitive(is_local);
+        let id_string = string_res.unwrap().unwrap();
+        let file = app.files().iter().find(|f| f.id() == &id_string).unwrap();
+        let pixbuf = app.load_map_image(id_string);
+        detail_pane.update(&file, pixbuf);
     });
 }
 
