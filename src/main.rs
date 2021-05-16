@@ -9,6 +9,7 @@ mod detail_pane;
 mod filter_bar;
 mod gui_data;
 mod initialize_gui;
+mod installer;
 mod list_view;
 mod main_menu;
 mod output_dialog;

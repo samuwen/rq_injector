@@ -1,11 +1,14 @@
 use crate::config_dialog::ConfigDialog;
 use crate::detail_pane::DetailPane;
 use crate::filter_bar::FilterBar;
+use crate::installer::Installer;
 use crate::list_view::ListView;
 use crate::main_menu::MainMenu;
 use crate::output_dialog::OutputDialog;
 use gtk::prelude::*;
 use gtk::{Builder, Window};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct GuiData {
@@ -19,6 +22,8 @@ pub struct GuiData {
     pub list_view: ListView,
     pub config_dialog: ConfigDialog,
     pub output_dialog: OutputDialog,
+
+    pub shared_install_state: Rc<RefCell<Installer>>,
 }
 
 impl GuiData {
@@ -35,6 +40,7 @@ impl GuiData {
         let list_view = ListView::create_from_builder(&builder);
         let config_dialog = ConfigDialog::create_from_builder(&builder);
         let output_dialog = OutputDialog::create_from_builder(&builder);
+        let shared_install_state = Rc::new(RefCell::new(Installer::new()));
         window.set_position(gtk::WindowPosition::CenterAlways);
         window.show_all();
         {
@@ -55,6 +61,7 @@ impl GuiData {
             list_view,
             config_dialog,
             output_dialog,
+            shared_install_state,
         }
     }
 }

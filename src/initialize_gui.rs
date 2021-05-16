@@ -32,7 +32,7 @@ fn create_list_view(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
     let sw_list = gui_data.list_view.sw_list.clone();
     let list_store = gui_data.list_view.list_store.clone();
     let tree_view = gui_data.list_view.tree_view.clone();
-    populate_list_view(&list_store, app.borrow().files());
+    populate_list_view(&list_store, app.borrow().files(), gui_data);
     tree_view
         .get_selection()
         .set_mode(gtk::SelectionMode::Single);
@@ -49,11 +49,13 @@ fn handle_selection_change(
     app: Rc<RefCell<QInjector>>,
 ) {
     let detail_pane = gui_data.detail_pane.clone();
+    let shared_install_state = gui_data.shared_install_state.clone();
     tree_view.get_selection().connect_changed(move |sel| {
         let (model, iter) = sel.get_selected().unwrap();
         let string_res: Result<Option<String>, glib::value::GetError> =
             model.get_value(&iter, 1).get();
         let id_string = string_res.unwrap().unwrap();
+        let is_local = shared_install_state.borrow().is_map_installed(&id_string);
         let borrow = app.borrow();
         let file = borrow
             .files()
@@ -61,15 +63,16 @@ fn handle_selection_change(
             .find(|f| f.id() == &id_string)
             .unwrap();
         let pixbuf = app.borrow().load_map_image(id_string);
-        detail_pane.update(&file, pixbuf);
+        detail_pane.update(&file, pixbuf, is_local);
     });
 }
 
-fn populate_list_view(list_store: &gtk::ListStore, data: &Vec<QuakeFile>) {
+fn populate_list_view(list_store: &gtk::ListStore, data: &Vec<QuakeFile>, gui_data: &GuiData) {
+    let shared_install_state = gui_data.shared_install_state.clone();
     let col_indices = [0, 1, 2, 3, 4, 5];
     for file in data {
         let values: [&dyn ToValue; 6] = [
-            file.installed_locally(),
+            &shared_install_state.borrow().is_map_installed(file.id()),
             file.id(),
             file.title(),
             file.author(),

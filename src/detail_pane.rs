@@ -65,14 +65,13 @@ impl DetailPane {
         }
     }
 
-    pub fn update(&self, file: &QuakeFile, pixbuf: Pixbuf) {
+    pub fn update(&self, file: &QuakeFile, pixbuf: Pixbuf, is_local: bool) {
         trace!("Updating detail view");
         self.lbl_title.set_text(file.title());
         self.lbl_description.set_text(file.description());
         self.lbl_date.set_text(file.date());
         let size_text = convert_size_string(file.size());
         self.lbl_size.set_text(&size_text);
-        let is_local = *file.installed_locally();
         self.btn_install.set_sensitive(!is_local);
         self.btn_uninstall.set_sensitive(is_local);
         self.btn_play.set_sensitive(is_local);

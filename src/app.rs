@@ -402,11 +402,13 @@ pub fn initialize_application() {
             trace!("Image directory already exists");
         }
     }
+    let (sender, receiver): (glib::Sender<String>, glib::Receiver<String>) =
+        glib::MainContext::channel(glib::PRIORITY_DEFAULT);
     let config = Configuration::new();
     let local_maps = LocalMaps::new();
     let data = initialize_data(&local_maps);
     let inj = QInjector {
-        files: data.clone(),
+        files: data,
         config,
         local_maps,
     };
