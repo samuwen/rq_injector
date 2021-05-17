@@ -28,14 +28,14 @@ fn read_datastore<R: Read>(reader: BufReader<R>) -> Files {
     files
 }
 
-#[derive(Clone, Debug, Deserialize, Getters)]
+#[derive(Clone, Debug, Default, Deserialize, Getters)]
 #[getset(get = "pub")]
 pub struct Files {
     #[serde(rename = "file", default)]
     files: Vec<QuakeFile>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters)]
+#[derive(Clone, Debug, Default, Deserialize, Getters)]
 #[serde(rename(deserialize = "file"))]
 #[getset(get = "pub")]
 pub struct QuakeFile {
@@ -62,7 +62,7 @@ impl QuakeFile {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters)]
+#[derive(Clone, Debug, Default, Deserialize, Getters)]
 #[getset(get = "pub")]
 pub struct TechInfo {
     #[serde(default, rename = "zipbasedir")]
@@ -75,14 +75,14 @@ pub struct TechInfo {
     requirements: Option<Requirements>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters)]
+#[derive(Clone, Debug, Default, Deserialize, Getters)]
 #[getset(get = "pub")]
 pub struct Requirements {
     #[serde(rename = "file")]
     req_file: Vec<ReqFile>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters)]
+#[derive(Clone, Debug, Default, Deserialize, Getters)]
 #[getset(get = "pub")]
 pub struct ReqFile {
     id: String,

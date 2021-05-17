@@ -25,7 +25,7 @@ pub fn initialize_gui(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
     connect_close(gui_data, app.clone());
 
     initialize_dialog_connectors(gui_data, app.clone());
-    initialize_detail_buttons(gui_data, app);
+    initialize_detail_buttons(gui_data);
     initialize_output_dialog(gui_data);
 }
 
@@ -112,10 +112,10 @@ fn initialize_dialog_connectors(gui_data: &GuiData, app: Rc<RefCell<QInjector>>)
     connect_config_dialog::connect_response(gui_data, app);
 }
 
-fn initialize_detail_buttons(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
+fn initialize_detail_buttons(gui_data: &GuiData) {
     connect_detail_buttons::connect_install_map(gui_data);
     connect_detail_buttons::connect_uninstall_map(gui_data);
-    connect_detail_buttons::connect_play_button(gui_data, app.clone());
+    connect_detail_buttons::connect_play_button(gui_data);
 }
 
 fn initialize_output_dialog(gui_data: &GuiData) {

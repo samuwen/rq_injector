@@ -1,5 +1,5 @@
 use crate::config_dialog::ConfigDialog;
-use crate::configuration::LocalMaps;
+use crate::configuration::{Configuration, LocalMaps};
 use crate::detail_pane::DetailPane;
 use crate::filter_bar::FilterBar;
 use crate::list_view::ListView;
@@ -26,6 +26,7 @@ pub struct GuiData {
 
     pub shared_install_state: Rc<RefCell<LocalMaps>>,
     pub shared_files_state: Rc<RefCell<Vec<QuakeFile>>>,
+    pub shared_config_state: Rc<RefCell<Configuration>>,
 }
 
 impl GuiData {
@@ -45,6 +46,7 @@ impl GuiData {
         let shared_install_state = Rc::new(RefCell::new(LocalMaps::new()));
         let quake_files = initialize_data();
         let shared_files_state = Rc::new(RefCell::new(quake_files));
+        let shared_config_state = Rc::new(RefCell::new(Configuration::new()));
         window.set_position(gtk::WindowPosition::CenterAlways);
         window.show_all();
         {
@@ -67,6 +69,7 @@ impl GuiData {
             output_dialog,
             shared_install_state,
             shared_files_state,
+            shared_config_state,
         }
     }
 }

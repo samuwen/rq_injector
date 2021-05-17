@@ -8,6 +8,7 @@ mod connect_quit;
 mod connect_selection_change;
 mod detail_pane;
 mod filter_bar;
+mod game_player;
 mod gui_data;
 mod image_loader;
 mod initialize_gui;

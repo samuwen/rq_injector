@@ -1,4 +1,5 @@
 use crate::app::QInjector;
+use crate::game_player::*;
 use crate::gui_data::GuiData;
 use crate::installer::Installer;
 use gio::prelude::*;
@@ -6,8 +7,12 @@ use glib::{Continue, MainContext, Receiver, Sender, PRIORITY_DEFAULT};
 use gtk::prelude::*;
 use log::*;
 use std::cell::RefCell;
+use std::process::Output;
 use std::rc::Rc;
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::thread;
+
+static THREAD_COUNTER: AtomicU8 = AtomicU8::new(0);
 
 pub fn connect_install_map(gui_data: &GuiData) {
     let (sender, receiver): (Sender<Installer>, Receiver<Installer>) =
@@ -16,6 +21,7 @@ pub fn connect_install_map(gui_data: &GuiData) {
     let rec_gui_data = gui_data.clone();
     let shared_install_state = rec_gui_data.shared_install_state.clone();
     receiver.attach(None, move |installer| {
+        release_thread_name();
         set_installed_state(&rec_gui_data, true, installer.path_string().to_owned());
         let map_pack = installer.installed_map_pack().clone().unwrap();
         shared_install_state.borrow_mut().add_map(map_pack);
@@ -29,8 +35,9 @@ pub fn connect_install_map(gui_data: &GuiData) {
         let map_id = get_selected_map_id(&con_gui_data);
         let path_string = get_current_path_string(&con_gui_data);
         let sender = sender.clone();
+        let thread_name = get_thread_name("install");
         thread::Builder::new()
-            .name("install".to_string())
+            .name(thread_name)
             .spawn(move || {
                 let mut installer = Installer::new(false).with_path_string(path_string);
                 installer.install_map(map_id);
@@ -48,6 +55,7 @@ pub fn connect_uninstall_map(gui_data: &GuiData) {
     let shared_install_state = rec_gui_data.shared_install_state.clone();
     let rec_shared_install_state = shared_install_state.clone();
     receiver.attach(None, move |installer| {
+        release_thread_name();
         set_installed_state(&rec_gui_data, false, installer.path_string().to_owned());
         let map_id = installer.map_id();
         rec_shared_install_state.borrow_mut().remove_map(map_id);
@@ -67,8 +75,9 @@ pub fn connect_uninstall_map(gui_data: &GuiData) {
             .to_owned();
 
         let sender = sender.clone();
+        let thread_name = get_thread_name("uninstall");
         thread::Builder::new()
-            .name("uninstall".to_string())
+            .name(thread_name)
             .spawn(move || {
                 let mut installer = Installer::new(false)
                     .with_path_string(path_string)
@@ -81,20 +90,17 @@ pub fn connect_uninstall_map(gui_data: &GuiData) {
     });
 }
 
-pub fn connect_play_button(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
+pub fn connect_play_button(gui_data: &GuiData) {
+    let (sender, receiver): (Sender<Output>, Receiver<Output>) =
+        MainContext::channel(PRIORITY_DEFAULT);
     let button = gui_data.detail_pane.btn_play.clone();
     let gui_data = gui_data.clone();
     let dropdown = gui_data.detail_pane.dropdown.clone();
     let output_dialog = gui_data.output_dialog.dlg_output.clone();
     let output_text = gui_data.output_dialog.txt_output.clone();
-    button.connect_clicked(move |_| {
-        let model = dropdown.get_model().unwrap();
-        let iter = dropdown.get_active_iter().unwrap();
-        let string_res: Result<Option<String>, glib::value::GetError> =
-            model.get_value(&iter, 0).get();
-        let start_map = string_res.unwrap().unwrap();
-        let id = get_selected_map_id(&gui_data);
-        let result = app.borrow().play_quake_map(&id, &start_map).unwrap();
+    let shared_files_state = gui_data.shared_files_state.clone();
+    let shared_config_state = gui_data.shared_config_state.clone();
+    receiver.attach(None, move |result| {
         let text: String = result
             .stdout
             .iter()
@@ -105,6 +111,42 @@ pub fn connect_play_button(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
             .collect();
         output_text.get_buffer().unwrap().set_text(&text);
         output_dialog.show_all();
+        Continue(true)
+    });
+    button.connect_clicked(move |_| {
+        let model = dropdown.get_model().unwrap();
+        let iter = dropdown.get_active_iter().unwrap();
+        let string_res: Result<Option<String>, glib::value::GetError> =
+            model.get_value(&iter, 0).get();
+        let start_map = string_res.unwrap().unwrap();
+        let map_id = get_selected_map_id(&gui_data);
+        let quake_exe = shared_config_state.borrow().quake_exe().to_owned();
+        let quake_dir = shared_config_state.borrow().quake_dir().to_owned();
+        let command_line_opt = shared_files_state
+            .borrow()
+            .iter()
+            .find(|file| file.id() == &map_id)
+            .unwrap()
+            .tech_info()
+            .command_line()
+            .to_owned();
+        let sender = sender.clone();
+        let thread_name = get_thread_name("play");
+        thread::Builder::new()
+            .name(thread_name)
+            .spawn(move || {
+                let game_player = GamePlayerBuilder::default()
+                    .quake_exe(quake_exe)
+                    .quake_dir(quake_dir)
+                    .map_id(map_id)
+                    .start_map(start_map)
+                    .command_line(command_line_opt)
+                    .build()
+                    .unwrap();
+                let out = game_player.play_quake_map();
+                sender.send(out).expect("Couldn't send");
+            })
+            .expect("Failed to spawn play thread");
     });
 }
 
@@ -149,4 +191,14 @@ fn get_list_selection(gui_data: &GuiData, path_string: String) -> (gtk::TreeMode
 fn get_current_path_string(gui_data: &GuiData) -> String {
     let (model, iter) = get_current_list_selection(gui_data);
     model.get_string_from_iter(&iter).unwrap().to_string()
+}
+
+fn get_thread_name(name: &str) -> String {
+    let name = format!("{}-{}", name, THREAD_COUNTER.load(Ordering::Relaxed));
+    THREAD_COUNTER.fetch_add(1, Ordering::Relaxed);
+    name
+}
+
+fn release_thread_name() {
+    THREAD_COUNTER.fetch_sub(1, Ordering::Relaxed);
 }
