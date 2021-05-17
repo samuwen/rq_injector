@@ -16,21 +16,13 @@ pub fn connect_selection_change(gui_data: &GuiData, tree_view: &gtk::TreeView) {
     let (sender, receiver): (Sender<ImageLoader>, Receiver<ImageLoader>) =
         MainContext::channel(PRIORITY_DEFAULT);
     let rec_tree_view = tree_view.clone();
+    let rec_detail_pane = detail_pane.clone();
     receiver.attach(None, move |image_loader| {
         let pixbuf = Pixbuf::from_file_at_size(image_loader.path(), 200, 200).unwrap();
-        let file = shared_files_state
-            .borrow()
-            .iter()
-            .find(|f| f.id() == image_loader.map_id())
-            .unwrap()
-            .clone();
-        let is_local = shared_install_state
-            .borrow()
-            .is_map_installed(image_loader.map_id());
         let (model, iter) = rec_tree_view.get_selection().get_selected().unwrap();
         let current_path_string = model.get_string_from_iter(&iter).unwrap().to_string();
         if &current_path_string == image_loader.path_string() {
-            detail_pane.update(&file, pixbuf, is_local);
+            rec_detail_pane.update_image(pixbuf);
         }
         THREAD_COUNTER.fetch_sub(1, Ordering::Relaxed);
         Continue(true)
@@ -41,6 +33,14 @@ pub fn connect_selection_change(gui_data: &GuiData, tree_view: &gtk::TreeView) {
             model.get_value(&iter, 1).get();
         let id_string = string_res.unwrap().unwrap();
         let path_string = model.get_string_from_iter(&iter).unwrap().to_string();
+        let file = shared_files_state
+            .borrow()
+            .iter()
+            .find(|f| f.id() == &id_string)
+            .unwrap()
+            .clone();
+        let is_local = shared_install_state.borrow().is_map_installed(&id_string);
+        detail_pane.update(&file, is_local);
         let sender = sender.clone();
         thread::Builder::new()
             .name(format!("select-{}", THREAD_COUNTER.load(Ordering::Relaxed)))

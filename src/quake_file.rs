@@ -15,7 +15,7 @@ fn read_datastore<R: Read>(reader: BufReader<R>) -> Files {
     trace!("Reading the data file");
     let file_result: Result<Files, DeError> = from_reader(reader);
     let files: Files = match file_result {
-        Ok(mut f) => {
+        Ok(f) => {
             info!("Data file has parsed successfully");
             f
         }

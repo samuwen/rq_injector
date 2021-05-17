@@ -65,7 +65,7 @@ impl DetailPane {
         }
     }
 
-    pub fn update(&self, file: &QuakeFile, pixbuf: Pixbuf, is_local: bool) {
+    pub fn update(&self, file: &QuakeFile, is_local: bool) {
         trace!("Updating detail view");
         self.lbl_title.set_text(file.title());
         self.lbl_description.set_text(file.description());
@@ -76,8 +76,7 @@ impl DetailPane {
         self.btn_uninstall.set_sensitive(is_local);
         self.btn_play.set_sensitive(is_local);
 
-        self.img_current_map.set_from_pixbuf(Some(&pixbuf));
-        self.img_current_map.set_visible(true);
+        self.img_current_map.set_visible(false); // hide image until it loads
         let start_maps = file.tech_info().start_map();
         self.dropdown.remove_all();
         if start_maps.len() == 0 {
@@ -91,6 +90,11 @@ impl DetailPane {
             self.dropdown.set_active_iter(Some(&iter));
         }
         self.dropdown.set_sensitive(start_maps.len() > 2);
+    }
+
+    pub fn update_image(&self, pixbuf: Pixbuf) {
+        self.img_current_map.set_from_pixbuf(Some(&pixbuf));
+        self.img_current_map.set_visible(true);
     }
 }
 
