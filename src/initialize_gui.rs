@@ -45,30 +45,6 @@ fn create_list_view(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
     sw_list.show_all();
 }
 
-fn handle_selection_change(
-    gui_data: &GuiData,
-    tree_view: &gtk::TreeView,
-    app: Rc<RefCell<QInjector>>,
-) {
-    let detail_pane = gui_data.detail_pane.clone();
-    let shared_install_state = gui_data.shared_install_state.clone();
-    tree_view.get_selection().connect_changed(move |sel| {
-        let (model, iter) = sel.get_selected().unwrap();
-        let string_res: Result<Option<String>, glib::value::GetError> =
-            model.get_value(&iter, 1).get();
-        let id_string = string_res.unwrap().unwrap();
-        let is_local = shared_install_state.borrow().is_map_installed(&id_string);
-        let borrow = app.borrow();
-        let file = borrow
-            .files()
-            .iter()
-            .find(|f| f.id() == &id_string)
-            .unwrap();
-        let pixbuf = app.borrow().load_map_image(id_string);
-        detail_pane.update(&file, pixbuf, is_local);
-    });
-}
-
 fn populate_list_view(list_store: &gtk::ListStore, data: &Vec<QuakeFile>, gui_data: &GuiData) {
     let shared_install_state = gui_data.shared_install_state.clone();
     let col_indices = [0, 1, 2, 3, 4, 5];

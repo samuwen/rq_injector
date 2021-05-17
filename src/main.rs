@@ -9,6 +9,7 @@ mod connect_selection_change;
 mod detail_pane;
 mod filter_bar;
 mod gui_data;
+mod image_loader;
 mod initialize_gui;
 mod installer;
 mod list_view;
