@@ -47,12 +47,18 @@ impl LocalMaps {
         maps
     }
 
+    pub fn from(other: &Self) -> Self {
+        Self {
+            maps: other.maps.clone(),
+        }
+    }
+
     pub fn add_map(&mut self, pack: MapPack) {
         self.maps.push(pack);
     }
 
-    pub fn remove_map(&mut self, id: String) {
-        let map_pos = match self.maps.iter().position(|map| map.id == id) {
+    pub fn remove_map(&mut self, id: &String) {
+        let map_pos = match self.maps.iter().position(|map| &map.id == id) {
             Some(m) => m,
             None => {
                 error!("Couldn't find map '{}' to remove from local list", id);
@@ -64,6 +70,10 @@ impl LocalMaps {
 
     pub fn get_map_by_id(&self, id: &String) -> Option<&MapPack> {
         self.maps.iter().find(|map| map.id() == id)
+    }
+
+    pub fn is_map_installed(&self, id: &String) -> bool {
+        self.maps.iter().any(|map| map.id() == id)
     }
 
     pub fn write_to_file(&self) {

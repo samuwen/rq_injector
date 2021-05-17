@@ -2,52 +2,82 @@ use crate::app::QInjector;
 use crate::gui_data::GuiData;
 use crate::installer::Installer;
 use gio::prelude::*;
+use glib::{Continue, MainContext, Receiver, Sender, PRIORITY_DEFAULT};
 use gtk::prelude::*;
 use log::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::thread;
 
-pub fn connect_install_map(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
-    let (sender, receiver): (glib::Sender<Installer>, glib::Receiver<Installer>) =
-        glib::MainContext::channel(glib::PRIORITY_DEFAULT);
-    let install_button = gui_data.detail_pane.btn_install.clone();
+pub fn connect_install_map(gui_data: &GuiData) {
+    let (sender, receiver): (Sender<Installer>, Receiver<Installer>) =
+        MainContext::channel(PRIORITY_DEFAULT);
+    let button = gui_data.detail_pane.btn_install.clone();
     let rec_gui_data = gui_data.clone();
     let shared_install_state = rec_gui_data.shared_install_state.clone();
     receiver.attach(None, move |installer| {
-        debug!("Done installing");
-        set_installed_state(
-            &rec_gui_data,
-            app.clone(),
-            true,
-            installer.get_path_string(),
-        );
-        *shared_install_state.borrow_mut() = installer;
-        glib::Continue(false)
+        set_installed_state(&rec_gui_data, true, installer.path_string().to_owned());
+        let map_pack = installer.installed_map_pack().clone().unwrap();
+        shared_install_state.borrow_mut().add_map(map_pack);
+        Continue(false)
     });
     let con_gui_data = gui_data.clone();
-    install_button.connect_clicked(move |_| {
+
+    button.connect_clicked(move |_| {
         trace!("Install button clicked");
         // TODO - look for map in download dir and bypass pinging remote
         let map_id = get_selected_map_id(&con_gui_data);
         let path_string = get_current_path_string(&con_gui_data);
         let sender = sender.clone();
-        thread::spawn(move || {
-            let mut installer = Installer::new().path_string(path_string);
-            installer.install_map(map_id);
-            sender.send(installer);
-        });
+        thread::Builder::new()
+            .name("install".to_string())
+            .spawn(move || {
+                let mut installer = Installer::new(false).with_path_string(path_string);
+                installer.install_map(map_id);
+                sender.send(installer).expect("Couldn't send");
+            })
+            .expect("Failed to spawn install thread");
     });
 }
 
-pub fn connect_uninstall_map(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
+pub fn connect_uninstall_map(gui_data: &GuiData) {
+    let (sender, receiver): (Sender<Installer>, Receiver<Installer>) =
+        MainContext::channel(PRIORITY_DEFAULT);
     let button = gui_data.detail_pane.btn_uninstall.clone();
-    let gui_data = gui_data.clone();
+    let rec_gui_data = gui_data.clone();
+    let shared_install_state = rec_gui_data.shared_install_state.clone();
+    let rec_shared_install_state = shared_install_state.clone();
+    receiver.attach(None, move |installer| {
+        set_installed_state(&rec_gui_data, false, installer.path_string().to_owned());
+        let map_id = installer.map_id();
+        rec_shared_install_state.borrow_mut().remove_map(map_id);
+        Continue(false)
+    });
+
+    let con_gui_data = gui_data.clone();
     button.connect_clicked(move |_| {
         trace!("Uninstall button clicked");
-        let id = get_selected_map_id(&gui_data);
-        app.borrow_mut().uninstall_map(&id);
-        set_installed_state(&gui_data, app.clone(), false, String::new());
+        let map_id = get_selected_map_id(&con_gui_data);
+        let path_string = get_current_path_string(&con_gui_data);
+        let files = shared_install_state
+            .borrow()
+            .get_map_by_id(&map_id)
+            .unwrap()
+            .files()
+            .to_owned();
+
+        let sender = sender.clone();
+        thread::Builder::new()
+            .name("uninstall".to_string())
+            .spawn(move || {
+                let mut installer = Installer::new(false)
+                    .with_path_string(path_string)
+                    .with_map_id(map_id);
+                installer.uninstall_map(files);
+                thread::sleep(std::time::Duration::from_secs(10));
+                sender.send(installer).expect("Couldn't send");
+            })
+            .expect("Failed to spawn install thread");
     });
 }
 
@@ -78,12 +108,7 @@ pub fn connect_play_button(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
     });
 }
 
-fn set_installed_state(
-    gui_data: &GuiData,
-    app: Rc<RefCell<QInjector>>,
-    is_local: bool,
-    path_string: String,
-) {
+fn set_installed_state(gui_data: &GuiData, is_local: bool, path_string: String) {
     let current_path_string = get_current_path_string(gui_data);
     if path_string == current_path_string {
         let install_button = gui_data.detail_pane.btn_install.clone();
@@ -116,6 +141,7 @@ fn get_current_list_selection(gui_data: &GuiData) -> (gtk::TreeModel, gtk::TreeI
 fn get_list_selection(gui_data: &GuiData, path_string: String) -> (gtk::TreeModel, gtk::TreeIter) {
     let tree_view = gui_data.list_view.tree_view.clone();
     let model = tree_view.get_model().unwrap();
+    trace!("Getting path from path string: {}", path_string);
     let iter = model.get_iter_from_string(&path_string).unwrap();
     (model, iter)
 }

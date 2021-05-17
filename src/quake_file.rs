@@ -1,4 +1,3 @@
-use crate::configuration::LocalMaps;
 use getset::Getters;
 use log::*;
 use quick_xml::de::{from_reader, DeError};
@@ -6,42 +5,18 @@ use serde::Deserialize;
 use std::fs::File;
 use std::io::{BufReader, Read};
 
-pub fn initialize_data(local_maps: &LocalMaps) -> Vec<QuakeFile> {
+pub fn initialize_data() -> Vec<QuakeFile> {
     let file = File::open("data.xml").expect("file not found");
     let reader = BufReader::new(file);
-    read_datastore(reader, local_maps).files().clone()
+    read_datastore(reader).files().clone()
 }
 
-fn read_datastore<R: Read>(reader: BufReader<R>, local_maps: &LocalMaps) -> Files {
+fn read_datastore<R: Read>(reader: BufReader<R>) -> Files {
     trace!("Reading the data file");
     let file_result: Result<Files, DeError> = from_reader(reader);
     let files: Files = match file_result {
         Ok(mut f) => {
             info!("Data file has parsed successfully");
-            // check if files are local and update the data so the ui has checkboxes
-            let local_file_list = local_maps.maps();
-            info!("Checking for locally installed files");
-            debug!(
-                "Data file count: {} | local file count: {}",
-                f.files.len(),
-                local_file_list.len()
-            );
-            let mut count = 0;
-            local_file_list.iter().for_each(|local_file| {
-                let found = f.files.iter_mut().find(|file| {
-                    let id = format!("{}", file.id());
-                    trace!("{} == {}", id, local_file.id());
-                    local_file.id() == &id
-                });
-                match found {
-                    Some(file) => {
-                        count += 1;
-                        file.set_is_local(true);
-                    }
-                    None => (),
-                }
-            });
-            debug!("Done iterating over files, local count is: {}", count);
             f
         }
         Err(e) => {

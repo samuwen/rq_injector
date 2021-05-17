@@ -267,7 +267,7 @@ impl QInjector {
                 }
             }
         });
-        self.local_maps.remove_map(id.to_owned());
+        self.local_maps.remove_map(id);
         true
     }
 
@@ -317,10 +317,6 @@ impl QInjector {
                 None
             }
         }
-    }
-
-    pub fn write_local_maps(&self) {
-        self.local_maps.write_to_file();
     }
 
     fn extract_file_to_directory<P: AsRef<Path> + Display>(
@@ -402,11 +398,9 @@ pub fn initialize_application() {
             trace!("Image directory already exists");
         }
     }
-    let (sender, receiver): (glib::Sender<String>, glib::Receiver<String>) =
-        glib::MainContext::channel(glib::PRIORITY_DEFAULT);
     let config = Configuration::new();
     let local_maps = LocalMaps::new();
-    let data = initialize_data(&local_maps);
+    let data = initialize_data();
     let inj = QInjector {
         files: data,
         config,

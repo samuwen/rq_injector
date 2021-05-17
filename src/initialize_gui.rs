@@ -3,6 +3,7 @@ use crate::connect_config_dialog;
 use crate::connect_detail_buttons;
 use crate::connect_output_dialog;
 use crate::connect_quit::*;
+use crate::connect_selection_change;
 use crate::gui_data::GuiData;
 use crate::quake_file::*;
 use gtk::prelude::*;
@@ -38,7 +39,8 @@ fn create_list_view(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
         .set_mode(gtk::SelectionMode::Single);
     create_tree_view_columns(&tree_view);
     tree_view.set_vexpand(true);
-    handle_selection_change(gui_data, &tree_view, app);
+    connect_selection_change::connect_selection_change(gui_data, &tree_view);
+    // handle_selection_change(gui_data, &tree_view, app);
     sw_list.add(&tree_view);
     sw_list.show_all();
 }
@@ -135,8 +137,8 @@ fn initialize_dialog_connectors(gui_data: &GuiData, app: Rc<RefCell<QInjector>>)
 }
 
 fn initialize_detail_buttons(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
-    connect_detail_buttons::connect_install_map(gui_data, app.clone());
-    connect_detail_buttons::connect_uninstall_map(gui_data, app.clone());
+    connect_detail_buttons::connect_install_map(gui_data);
+    connect_detail_buttons::connect_uninstall_map(gui_data);
     connect_detail_buttons::connect_play_button(gui_data, app.clone());
 }
 

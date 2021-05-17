@@ -5,6 +5,7 @@ mod connect_config_dialog;
 mod connect_detail_buttons;
 mod connect_output_dialog;
 mod connect_quit;
+mod connect_selection_change;
 mod detail_pane;
 mod filter_bar;
 mod gui_data;
@@ -27,7 +28,7 @@ fn main() {
 
     Logger::with(log_builder.build())
         .duplicate_to_stdout(flexi_logger::Duplicate::All)
-        .format(flexi_logger::colored_default_format)
+        .format(flexi_logger::colored_with_thread)
         .set_palette("196;208;-;7;10".to_string())
         .start()
         .unwrap_or_else(|e| panic!("Logger initialization failed with {}", e));

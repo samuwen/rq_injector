@@ -17,9 +17,10 @@ pub fn connect_menu_quit(gui_data: &GuiData) {
 
 pub fn connect_close(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
     let window = gui_data.window.clone();
+    let shared_install_state = gui_data.shared_install_state.clone();
     window.connect_destroy(move |_| {
         debug!("Destroying window");
-        app.borrow().write_local_maps();
+        shared_install_state.borrow().write_to_file();
         app.borrow().write_config();
     });
 }

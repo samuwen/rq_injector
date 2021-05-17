@@ -1,10 +1,11 @@
 use crate::config_dialog::ConfigDialog;
+use crate::configuration::LocalMaps;
 use crate::detail_pane::DetailPane;
 use crate::filter_bar::FilterBar;
-use crate::installer::Installer;
 use crate::list_view::ListView;
 use crate::main_menu::MainMenu;
 use crate::output_dialog::OutputDialog;
+use crate::quake_file::{initialize_data, QuakeFile};
 use gtk::prelude::*;
 use gtk::{Builder, Window};
 use std::cell::RefCell;
@@ -23,7 +24,8 @@ pub struct GuiData {
     pub config_dialog: ConfigDialog,
     pub output_dialog: OutputDialog,
 
-    pub shared_install_state: Rc<RefCell<Installer>>,
+    pub shared_install_state: Rc<RefCell<LocalMaps>>,
+    pub shared_files_state: Rc<RefCell<Vec<QuakeFile>>>,
 }
 
 impl GuiData {
@@ -40,7 +42,9 @@ impl GuiData {
         let list_view = ListView::create_from_builder(&builder);
         let config_dialog = ConfigDialog::create_from_builder(&builder);
         let output_dialog = OutputDialog::create_from_builder(&builder);
-        let shared_install_state = Rc::new(RefCell::new(Installer::new()));
+        let shared_install_state = Rc::new(RefCell::new(LocalMaps::new()));
+        let quake_files = initialize_data();
+        let shared_files_state = Rc::new(RefCell::new(quake_files));
         window.set_position(gtk::WindowPosition::CenterAlways);
         window.show_all();
         {
@@ -62,6 +66,7 @@ impl GuiData {
             config_dialog,
             output_dialog,
             shared_install_state,
+            shared_files_state,
         }
     }
 }
