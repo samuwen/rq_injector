@@ -1,10 +1,7 @@
-use crate::app::QInjector;
 use crate::gui_data::GuiData;
 use gtk::prelude::*;
 use gtk::AccelGroup;
 use log::*;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 pub fn connect_menu_quit(gui_data: &GuiData) {
     let menu_quit = gui_data.main_menu.menu_quit.clone();
@@ -15,13 +12,12 @@ pub fn connect_menu_quit(gui_data: &GuiData) {
     add_key_commands(gui_data);
 }
 
-pub fn connect_close(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
+pub fn connect_close(gui_data: &GuiData) {
     let window = gui_data.window.clone();
     let shared_install_state = gui_data.shared_install_state.clone();
     window.connect_destroy(move |_| {
         debug!("Destroying window");
         shared_install_state.borrow().write_to_file();
-        app.borrow().write_config();
     });
 }
 

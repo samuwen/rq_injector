@@ -25,6 +25,7 @@ impl ConfigDialog {
         let dlg_config: Dialog = builder
             .get_object("dlg_config")
             .expect("Failed to get dlg_config");
+        dlg_config.connect_delete_event(move |me, _| me.hide_on_delete());
         let btn_ok: Button = builder
             .get_object("dlg_config_btn_ok")
             .expect("Failed to get btn_ok");

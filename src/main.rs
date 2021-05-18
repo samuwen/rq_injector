@@ -1,4 +1,3 @@
-mod app;
 mod config_dialog;
 mod configuration;
 mod connect_config_dialog;
@@ -18,8 +17,10 @@ mod main_menu;
 mod output_dialog;
 mod quake_file;
 
-use app::initialize_application;
 use flexi_logger::{LevelFilter, LogSpecBuilder, Logger};
+use gui_data::GuiData;
+use initialize_gui::initialize_gui;
+use log::*;
 
 fn main() {
     let mut log_builder = LogSpecBuilder::new();
@@ -37,4 +38,19 @@ fn main() {
     gtk::init().expect("Failed to init gtk");
     initialize_application();
     gtk::main();
+}
+
+fn initialize_application() {
+    trace!("Starting application");
+    // make sure image directory exists
+    match std::fs::create_dir("images") {
+        Ok(_) => {
+            trace!("Made images directory");
+        }
+        Err(_) => {
+            trace!("Image directory already exists");
+        }
+    }
+    let gui_data = GuiData::new();
+    initialize_gui(&gui_data);
 }

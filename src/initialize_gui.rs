@@ -1,14 +1,10 @@
-use crate::app::QInjector;
 use crate::connect_config_dialog;
 use crate::connect_detail_buttons;
 use crate::connect_output_dialog;
 use crate::connect_quit::*;
 use crate::connect_selection_change;
 use crate::gui_data::GuiData;
-use crate::quake_file::*;
 use gtk::prelude::*;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 enum Columns {
     Installed = 0,
@@ -19,36 +15,36 @@ enum Columns {
     Rating,
 }
 
-pub fn initialize_gui(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
-    create_list_view(gui_data, app.clone());
+pub fn initialize_gui(gui_data: &GuiData) {
+    create_list_view(gui_data);
     connect_menu_quit(gui_data);
-    connect_close(gui_data, app.clone());
+    connect_close(gui_data);
 
-    initialize_dialog_connectors(gui_data, app.clone());
+    initialize_dialog_connectors(gui_data);
     initialize_detail_buttons(gui_data);
     initialize_output_dialog(gui_data);
 }
 
-fn create_list_view(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
+fn create_list_view(gui_data: &GuiData) {
     let sw_list = gui_data.list_view.sw_list.clone();
     let list_store = gui_data.list_view.list_store.clone();
     let tree_view = gui_data.list_view.tree_view.clone();
-    populate_list_view(&list_store, app.borrow().files(), gui_data);
+    populate_list_view(&list_store, gui_data);
     tree_view
         .get_selection()
         .set_mode(gtk::SelectionMode::Single);
     create_tree_view_columns(&tree_view);
     tree_view.set_vexpand(true);
     connect_selection_change::connect_selection_change(gui_data, &tree_view);
-    // handle_selection_change(gui_data, &tree_view, app);
     sw_list.add(&tree_view);
     sw_list.show_all();
 }
 
-fn populate_list_view(list_store: &gtk::ListStore, data: &Vec<QuakeFile>, gui_data: &GuiData) {
+fn populate_list_view(list_store: &gtk::ListStore, gui_data: &GuiData) {
     let shared_install_state = gui_data.shared_install_state.clone();
     let col_indices = [0, 1, 2, 3, 4, 5];
-    for file in data {
+    let shared_files_state = gui_data.shared_files_state.clone();
+    for file in shared_files_state.borrow().iter() {
         let values: [&dyn ToValue; 6] = [
             &shared_install_state.borrow().is_map_installed(file.id()),
             file.id(),
@@ -104,12 +100,11 @@ fn create_text_column(
     column
 }
 
-fn initialize_dialog_connectors(gui_data: &GuiData, app: Rc<RefCell<QInjector>>) {
-    connect_config_dialog::connect_activate(gui_data, app.clone());
+fn initialize_dialog_connectors(gui_data: &GuiData) {
+    connect_config_dialog::connect_activate(gui_data);
     connect_config_dialog::connect_cancel(gui_data);
-    connect_config_dialog::connect_ok(gui_data, app.clone());
+    connect_config_dialog::connect_ok(gui_data);
     connect_config_dialog::connect_selects(gui_data);
-    connect_config_dialog::connect_response(gui_data, app);
 }
 
 fn initialize_detail_buttons(gui_data: &GuiData) {

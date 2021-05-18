@@ -1,4 +1,3 @@
-use crate::app::QInjector;
 use crate::game_player::*;
 use crate::gui_data::GuiData;
 use crate::installer::Installer;
@@ -6,9 +5,7 @@ use gio::prelude::*;
 use glib::{Continue, MainContext, Receiver, Sender, PRIORITY_DEFAULT};
 use gtk::prelude::*;
 use log::*;
-use std::cell::RefCell;
 use std::process::Output;
-use std::rc::Rc;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::thread;
 
