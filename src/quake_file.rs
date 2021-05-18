@@ -56,12 +56,6 @@ pub struct QuakeFile {
     installed_locally: bool,
 }
 
-impl QuakeFile {
-    pub fn set_is_local(&mut self, val: bool) {
-        self.installed_locally = val;
-    }
-}
-
 #[derive(Clone, Debug, Default, Deserialize, Getters)]
 #[getset(get = "pub")]
 pub struct TechInfo {

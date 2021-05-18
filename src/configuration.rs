@@ -47,12 +47,6 @@ impl LocalMaps {
         maps
     }
 
-    pub fn from(other: &Self) -> Self {
-        Self {
-            maps: other.maps.clone(),
-        }
-    }
-
     pub fn add_map(&mut self, pack: MapPack) {
         self.maps.push(pack);
     }

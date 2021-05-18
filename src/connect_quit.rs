@@ -15,9 +15,11 @@ pub fn connect_menu_quit(gui_data: &GuiData) {
 pub fn connect_close(gui_data: &GuiData) {
     let window = gui_data.window.clone();
     let shared_install_state = gui_data.shared_install_state.clone();
+    let shared_config_state = gui_data.shared_config_state.clone();
     window.connect_destroy(move |_| {
         debug!("Destroying window");
         shared_install_state.borrow().write_to_file();
+        shared_config_state.borrow().write_to_file();
     });
 }
 
