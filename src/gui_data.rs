@@ -38,7 +38,7 @@ impl GuiData {
         let window: gtk::Window = builder
             .get_object("window_main")
             .expect("Failed to get window_main");
-        let pixbuf = Pixbuf::from_file_at_size("injector64.png", 64, 64).unwrap();
+        let pixbuf = Pixbuf::from_file_at_size("resources/injector64.png", 64, 64).unwrap();
         window.set_icon(Some(&pixbuf));
         let main_menu = MainMenu::create_from_builder(&builder);
         let filter_bar = FilterBar::create_from_builder(&builder);

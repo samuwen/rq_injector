@@ -1,4 +1,5 @@
 use crate::quake_file::QuakeFile;
+use chrono::NaiveDate;
 use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use gtk::{Builder, Button, ComboBoxText, Image, Label, ScrolledWindow};
@@ -69,7 +70,9 @@ impl DetailPane {
         trace!("Updating detail view");
         self.lbl_title.set_text(file.title());
         self.lbl_description.set_text(file.description());
-        self.lbl_date.set_text(file.date());
+        let naive_date = NaiveDate::parse_from_str(file.date(), "%d.%m.%Y").unwrap();
+        self.lbl_date
+            .set_text(&naive_date.format("%m-%d-%Y").to_string());
         let size_text = convert_size_string(file.size());
         self.lbl_size.set_text(&size_text);
         self.btn_install.set_sensitive(!is_local);
