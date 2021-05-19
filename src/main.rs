@@ -4,6 +4,7 @@ mod connect_config_dialog;
 mod connect_detail_buttons;
 mod connect_output_dialog;
 mod connect_quit;
+mod connect_search_event;
 mod connect_selection_change;
 mod detail_pane;
 mod filter_bar;
@@ -18,7 +19,6 @@ mod output_dialog;
 mod quake_file;
 
 use flexi_logger::{LevelFilter, LogSpecBuilder, Logger};
-use gui_data::GuiData;
 use initialize_gui::initialize_gui;
 use log::*;
 
@@ -51,6 +51,5 @@ fn initialize_application() {
             trace!("Image directory already exists");
         }
     }
-    let gui_data = GuiData::new();
-    initialize_gui(&gui_data);
+    initialize_gui();
 }

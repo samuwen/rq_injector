@@ -2,9 +2,12 @@ use crate::connect_config_dialog;
 use crate::connect_detail_buttons;
 use crate::connect_output_dialog;
 use crate::connect_quit::*;
+use crate::connect_search_event;
 use crate::connect_selection_change;
 use crate::gui_data::GuiData;
 use gtk::prelude::*;
+use gtk::{TreeIter, TreeModel};
+use log::*;
 
 enum Columns {
     Installed = 0,
@@ -15,14 +18,30 @@ enum Columns {
     Rating,
 }
 
-pub fn initialize_gui(gui_data: &GuiData) {
-    create_list_view(gui_data);
-    connect_menu_quit(gui_data);
-    connect_close(gui_data);
+impl Columns {
+    fn get_from_id(id: i32) -> String {
+        match id {
+            0 => String::from("Installed"),
+            1 => String::from("Name"),
+            2 => String::from("Title"),
+            3 => String::from("Author"),
+            4 => String::from("Released"),
+            5 => String::from("Rating"),
+            _ => panic!("Dude cmon"),
+        }
+    }
+}
 
-    initialize_dialog_connectors(gui_data);
-    initialize_detail_buttons(gui_data);
-    initialize_output_dialog(gui_data);
+pub fn initialize_gui() {
+    let gui_data = GuiData::new();
+    create_list_view(&gui_data);
+    connect_menu_quit(&gui_data);
+    connect_close(&gui_data);
+    connect_search_event::connect_search_event(&gui_data);
+
+    initialize_dialog_connectors(&gui_data);
+    initialize_detail_buttons(&gui_data);
+    initialize_output_dialog(&gui_data);
 }
 
 fn create_list_view(gui_data: &GuiData) {
@@ -30,6 +49,8 @@ fn create_list_view(gui_data: &GuiData) {
     let list_store = gui_data.list_view.list_store.clone();
     let tree_view = gui_data.list_view.tree_view.clone();
     populate_list_view(&list_store, gui_data);
+    let c_index = gtk::SortColumn::Index(Columns::Released as u32);
+    list_store.set_sort_func(c_index, date_sort_fn);
     tree_view
         .get_selection()
         .set_mode(gtk::SelectionMode::Single);
@@ -57,7 +78,6 @@ fn populate_list_view(list_store: &gtk::ListStore, gui_data: &GuiData) {
     }
 }
 
-// TODO - dates don't sort right. need to figure out a way to get that working
 fn create_tree_view_columns(tree_view: &gtk::TreeView) {
     let renderer = gtk::CellRendererToggle::new();
     let installed_column = gtk::TreeViewColumn::new();
@@ -97,6 +117,10 @@ fn create_text_column(
         .build();
     column.pack_start(renderer, true);
     column.add_attribute(renderer, "text", col_int);
+    column.connect_clicked(move |me| {
+        let sort_id = me.get_sort_column_id();
+        debug!("Sorting column: {}", Columns::get_from_id(sort_id));
+    });
     column
 }
 
@@ -115,4 +139,19 @@ fn initialize_detail_buttons(gui_data: &GuiData) {
 
 fn initialize_output_dialog(gui_data: &GuiData) {
     connect_output_dialog::connect_ok(gui_data);
+}
+
+fn date_sort_fn(model: &TreeModel, row_1: &TreeIter, row_2: &TreeIter) -> std::cmp::Ordering {
+    let date_1 = get_date(model.get_value(row_1, Columns::Released as i32));
+    let date_2 = get_date(model.get_value(row_2, Columns::Released as i32));
+    date_1.cmp(&date_2)
+}
+
+fn get_date(val: glib::Value) -> chrono::NaiveDate {
+    let val: String = val.get().unwrap().unwrap();
+    let date_res = chrono::NaiveDate::parse_from_str(&val, "%d.%m.%Y");
+    match date_res {
+        Ok(d) => d,
+        Err(e) => panic!("{}", e),
+    }
 }
