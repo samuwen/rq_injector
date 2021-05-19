@@ -8,7 +8,8 @@ pub fn connect_search_event(gui_data: &GuiData) {
     let gui_data = gui_data.clone();
     let clear_button = gui_data.filter_bar.btn_clear_filter.clone();
     search_entry.connect_property_text_notify(move |me| {
-        let text = me.get_buffer().get_text();
+        // we have text in the box
+        let text = me.get_buffer().get_text().trim().to_owned();
         update_list(&gui_data, text);
     });
     clear_button.connect_clicked(move |me| {
@@ -22,14 +23,18 @@ fn update_list(gui_data: &GuiData, text: String) {
     trace!("Updating list with text: {}", text);
     let tree_view = gui_data.list_view.tree_view.clone();
     let selection = tree_view.get_selection();
+    // if something is selected
     if let Some((model, iter)) = selection.get_selected() {
+        // record the internal representation of the selected item
         let path_string = model.get_string_from_iter(&iter).unwrap().to_string();
         change_list_data(gui_data, text);
+        // if it is still shown, re-select it
         if let Some(iter) = model.get_iter_from_string(&path_string) {
             debug!("Valid path, re-selecting node");
             selection.select_iter(&iter);
         }
     } else {
+        // nothing is selected
         change_list_data(gui_data, text);
     }
 }
@@ -41,6 +46,7 @@ fn change_list_data(gui_data: &GuiData, text: String) {
     let clear_button = gui_data.filter_bar.btn_clear_filter.clone();
     let tree_view = gui_data.list_view.tree_view.clone();
     let selection = tree_view.get_selection();
+    // Set it so nothing can be selected while we update the list
     selection.set_mode(gtk::SelectionMode::None);
     selection.unselect_all();
     clear_button.set_sensitive(text.len() > 0);
@@ -63,6 +69,7 @@ fn change_list_data(gui_data: &GuiData, text: String) {
             list.set(&list.append(), &col_indices, &values);
         }
     });
+    // done updating list, so lets re-enable selectability
     selection.set_mode(gtk::SelectionMode::Single);
 }
 
