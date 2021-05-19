@@ -27,34 +27,42 @@ pub fn connect_selection_change(gui_data: &GuiData, tree_view: &gtk::TreeView) {
         THREAD_COUNTER.fetch_sub(1, Ordering::Relaxed);
         Continue(true)
     });
-    tree_view.get_selection().connect_changed(move |sel| {
-        let (model, iter) = sel.get_selected().unwrap();
-        let string_res: Result<Option<String>, glib::value::GetError> =
-            model.get_value(&iter, 1).get();
-        let id_string = string_res.unwrap().unwrap();
-        let path_string = model.get_string_from_iter(&iter).unwrap().to_string();
-        let file = shared_files_state
-            .borrow()
-            .iter()
-            .find(|f| f.id() == &id_string)
-            .unwrap()
-            .clone();
-        let is_local = shared_install_state.borrow().is_map_installed(&id_string);
-        detail_pane.update(&file, is_local);
-        let sender = sender.clone();
-        thread::Builder::new()
-            .name(format!("select-{}", THREAD_COUNTER.load(Ordering::Relaxed)))
-            .spawn(move || {
-                THREAD_COUNTER.fetch_add(1, Ordering::Relaxed);
-                let mut image_loader = ImageLoader::new(id_string, path_string);
-                image_loader.load_map_image();
-                match sender.send(image_loader) {
-                    Ok(_) => (),
-                    Err(e) => {
-                        error!("{}", e);
-                    }
-                }
-            })
-            .expect("Failed to spawn select thread");
-    });
+    tree_view
+        .get_selection()
+        .connect_changed(move |sel| match sel.get_selected() {
+            Some((model, iter)) => {
+                let string_res: Result<Option<String>, glib::value::GetError> =
+                    model.get_value(&iter, 1).get();
+                let id_string = string_res.unwrap().unwrap();
+                trace!("Changed selection to {}", id_string);
+                let path_string = model.get_string_from_iter(&iter).unwrap().to_string();
+                let file = shared_files_state
+                    .borrow()
+                    .iter()
+                    .find(|f| f.id() == &id_string)
+                    .unwrap()
+                    .clone();
+                let is_local = shared_install_state.borrow().is_map_installed(&id_string);
+                detail_pane.update(&file, is_local);
+                let sender = sender.clone();
+                thread::Builder::new()
+                    .name(format!("select-{}", THREAD_COUNTER.load(Ordering::Relaxed)))
+                    .spawn(move || {
+                        THREAD_COUNTER.fetch_add(1, Ordering::Relaxed);
+                        let mut image_loader = ImageLoader::new(id_string, path_string);
+                        image_loader.load_map_image();
+                        match sender.send(image_loader) {
+                            Ok(_) => (),
+                            Err(e) => {
+                                error!("{}", e);
+                            }
+                        }
+                    })
+                    .expect("Failed to spawn select thread");
+            }
+            None => {
+                trace!("Clearing selected");
+                detail_pane.clear();
+            }
+        });
 }

@@ -92,6 +92,18 @@ impl DetailPane {
         self.dropdown.set_sensitive(start_maps.len() > 2);
     }
 
+    pub fn clear(&self) {
+        self.lbl_title.set_text("");
+        self.lbl_description.set_text("");
+        self.lbl_date.set_text("");
+        self.lbl_size.set_text("");
+        self.btn_install.set_sensitive(false);
+        self.btn_uninstall.set_sensitive(false);
+        self.btn_play.set_sensitive(false);
+        self.img_current_map.set_visible(false);
+        self.dropdown.remove_all();
+    }
+
     pub fn update_image(&self, pixbuf: Pixbuf) {
         self.img_current_map.set_from_pixbuf(Some(&pixbuf));
         self.img_current_map.set_visible(true);

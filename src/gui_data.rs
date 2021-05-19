@@ -6,6 +6,7 @@ use crate::list_view::ListView;
 use crate::main_menu::MainMenu;
 use crate::output_dialog::OutputDialog;
 use crate::quake_file::{initialize_data, QuakeFile};
+use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use gtk::{Builder, Window};
 use std::cell::RefCell;
@@ -37,6 +38,8 @@ impl GuiData {
         let window: gtk::Window = builder
             .get_object("window_main")
             .expect("Failed to get window_main");
+        let pixbuf = Pixbuf::from_file_at_size("injector64.png", 64, 64).unwrap();
+        window.set_icon(Some(&pixbuf));
         let main_menu = MainMenu::create_from_builder(&builder);
         let filter_bar = FilterBar::create_from_builder(&builder);
         let detail_pane = DetailPane::create_from_builder(&builder);
