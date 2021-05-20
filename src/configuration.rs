@@ -50,7 +50,7 @@ impl LocalMaps {
     pub fn new() -> Self {
         let mut file_path = get_config_path();
         file_path.push(LOCAL_MAPS_FILE_NAME);
-        debug!("{:?}", file_path);
+        debug!("Local file path: {:?}", file_path);
         let maps = read_or_initialize(file_path, "local maps");
         trace!("{:?}", maps);
         maps
