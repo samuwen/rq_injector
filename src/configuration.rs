@@ -1,5 +1,5 @@
+use crate::utils::*;
 use derive_builder::Builder;
-use dirs::config_dir;
 use getset::{Getters, Setters};
 use log::*;
 use quick_xml::de::from_reader;
@@ -8,7 +8,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 const CONFIG_FILE_NAME: &str = "config.xml";
 const LOCAL_MAPS_FILE_NAME: &str = "installedMaps.xml";
@@ -25,7 +25,7 @@ pub struct Configuration {
 
 impl Configuration {
     pub fn new() -> Self {
-        let mut file_path = get_config_file_path();
+        let mut file_path = get_config_path();
         file_path.push(CONFIG_FILE_NAME);
         let config = read_or_initialize(file_path, "config");
         trace!("{:?}", config);
@@ -33,7 +33,7 @@ impl Configuration {
     }
 
     pub fn write_to_file(&self) {
-        let mut file_path = get_config_file_path();
+        let mut file_path = get_config_path();
         file_path.push(CONFIG_FILE_NAME);
         write_to_file(file_path, self, "config");
     }
@@ -48,7 +48,7 @@ pub struct LocalMaps {
 
 impl LocalMaps {
     pub fn new() -> Self {
-        let mut file_path = get_config_file_path();
+        let mut file_path = get_config_path();
         file_path.push(LOCAL_MAPS_FILE_NAME);
         debug!("{:?}", file_path);
         let maps = read_or_initialize(file_path, "local maps");
@@ -80,7 +80,7 @@ impl LocalMaps {
     }
 
     pub fn write_to_file(&self) {
-        let mut file_path = get_config_file_path();
+        let mut file_path = get_config_path();
         file_path.push(LOCAL_MAPS_FILE_NAME);
         write_to_file(file_path, self, "local maps");
     }
@@ -99,12 +99,6 @@ pub struct MapPack {
 pub struct FileInfo {
     crc: u32,
     name: String,
-}
-
-fn get_config_file_path() -> PathBuf {
-    let mut file_path = config_dir().expect("No home dir found");
-    file_path.push("QInjector");
-    file_path
 }
 
 fn read_or_initialize<T: DeserializeOwned + Default>(path: impl AsRef<Path>, name: &str) -> T {

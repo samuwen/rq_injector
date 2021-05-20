@@ -1,8 +1,8 @@
 use crate::configuration::*;
-use bytes::Bytes;
+use crate::utils::parse_bytes_from_response;
 use getset::Getters;
 use log::*;
-use reqwest::blocking::{ClientBuilder, Response};
+use reqwest::blocking::ClientBuilder;
 use std::fs::{remove_file, write, File};
 use std::io::BufReader;
 use zip::ZipArchive;
@@ -99,7 +99,7 @@ impl Installer {
             .build()
             .unwrap();
         let response_res = client.get(url).send();
-        let bytes_opt = self.parse_bytes_from_response(response_res);
+        let bytes_opt = parse_bytes_from_response(response_res);
         let bytes = match bytes_opt {
             Some(b) => b,
             None => {
@@ -150,29 +150,5 @@ impl Installer {
         debug!("Opening zip archive: {}", path);
         let reader = BufReader::new(File::open(path).unwrap());
         ZipArchive::new(reader).unwrap()
-    }
-
-    fn parse_bytes_from_response(
-        &self,
-        response_result: reqwest::Result<Response>,
-    ) -> Option<Bytes> {
-        match response_result {
-            Ok(res) => match res.bytes() {
-                Ok(b) => {
-                    debug!("Got file bytes successfully");
-                    Some(b)
-                }
-                Err(e) => {
-                    error!("Couldn't parse file bytes: {}", e);
-                    println!("File on server is invalid. Try another file");
-                    None
-                }
-            },
-            Err(e) => {
-                error!("Couldn't get data from remote: {}", e);
-                println!("Couldn't talk to remote server. Are you connected to the internet?");
-                None
-            }
-        }
     }
 }

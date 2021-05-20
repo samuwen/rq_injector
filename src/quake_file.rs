@@ -1,9 +1,8 @@
-use bytes::Bytes;
-use dirs::config_dir;
+use crate::utils::*;
 use getset::Getters;
 use log::*;
 use quick_xml::de::{from_reader, DeError};
-use reqwest::blocking::{ClientBuilder, Response};
+use reqwest::blocking::ClientBuilder;
 use serde::Deserialize;
 use std::fs::write;
 use std::fs::File;
@@ -11,8 +10,7 @@ use std::io::{BufReader, Read};
 use std::path::PathBuf;
 
 pub fn initialize_data() -> Files {
-    let mut file_path = config_dir().expect("Config dir not found");
-    file_path.push("QInjector");
+    let mut file_path = get_config_path();
     file_path.push("database.xml");
     let file = match File::open(&file_path) {
         Ok(f) => f,
@@ -46,27 +44,6 @@ fn get_data_from_remote(file_path: PathBuf) -> File {
         }
     };
     File::open(file_path).unwrap()
-}
-
-fn parse_bytes_from_response(response_result: reqwest::Result<Response>) -> Option<Bytes> {
-    match response_result {
-        Ok(res) => match res.bytes() {
-            Ok(b) => {
-                debug!("Got file bytes successfully");
-                Some(b)
-            }
-            Err(e) => {
-                error!("Couldn't parse file bytes: {}", e);
-                println!("File on server is invalid. Try another file");
-                None
-            }
-        },
-        Err(e) => {
-            error!("Couldn't get data from remote: {}", e);
-            println!("Couldn't talk to remote server. Are you connected to the internet?");
-            None
-        }
-    }
 }
 
 fn read_datastore<R: Read>(reader: BufReader<R>) -> Files {

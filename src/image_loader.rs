@@ -1,13 +1,15 @@
+use crate::utils::*;
 use bytes::Bytes;
 use getset::Getters;
 use log::*;
-use reqwest::blocking::{ClientBuilder, Response};
+use reqwest::blocking::ClientBuilder;
 use std::fs::{write, File};
+use std::path::PathBuf;
 
 #[derive(Clone, Debug, Default, Getters)]
 #[getset(get = "pub")]
 pub struct ImageLoader {
-    path: String,
+    path: PathBuf,
     map_id: String,
     path_string: String,
 }
@@ -15,14 +17,16 @@ pub struct ImageLoader {
 impl ImageLoader {
     pub fn new(map_id: String, path_string: String) -> Self {
         Self {
-            path: String::new(),
+            path: PathBuf::new(),
             path_string,
             map_id,
         }
     }
 
     pub fn load_map_image(&mut self) {
-        let path = format!("images/{}.jpg", self.map_id);
+        let mut path = get_config_path();
+        path.push("images");
+        path.push(format!("{}.jpg", self.map_id));
         self.path = path;
         debug!("Attempting to load image at: {:?}", self.path);
         let file_result = File::open(&self.path);
@@ -38,8 +42,9 @@ impl ImageLoader {
                 .build()
                 .unwrap();
             let response_res = client.get(url).send();
-            let byte_opt = parse_bytes_from_remote(response_res);
+            let byte_opt = parse_bytes_from_response(response_res);
             if let Some(bytes) = byte_opt {
+                debug!("Writing out to path: {:?}", self.path);
                 write_file_to_disk(&bytes, &self.path);
             } else {
                 panic!("Failed to get dem bytes");
@@ -48,29 +53,7 @@ impl ImageLoader {
     }
 }
 
-fn parse_bytes_from_remote(response_result: reqwest::Result<Response>) -> Option<Bytes> {
-    match response_result {
-        Ok(res) => match res.bytes() {
-            Ok(b) => {
-                debug!("Got file bytes successfully");
-                Some(b)
-            }
-            Err(e) => {
-                error!("Couldn't parse file bytes: {}", e);
-                println!("File on server is invalid. Try another file");
-                None
-            }
-        },
-        Err(e) => {
-            error!("Couldn't get data from remote: {}", e);
-            println!("Couldn't talk to remote server. Are you connected to the internet?");
-            None
-        }
-    }
-}
-
-fn write_file_to_disk(bytes: &Bytes, path: &String) -> bool {
-    debug!("Writing out to {}", path);
+fn write_file_to_disk(bytes: &Bytes, path: impl AsRef<std::path::Path>) -> bool {
     match write(path, bytes) {
         Ok(_) => info!("Wrote to file successfully"),
         Err(e) => {

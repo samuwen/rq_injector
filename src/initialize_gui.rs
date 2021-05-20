@@ -1,7 +1,7 @@
 use crate::connect_config_dialog;
 use crate::connect_detail_buttons;
+use crate::connect_menu_options;
 use crate::connect_output_dialog;
-use crate::connect_quit::*;
 use crate::connect_search_event;
 use crate::connect_selection_change;
 use crate::gui_data::GuiData;
@@ -40,8 +40,8 @@ impl Columns {
 pub fn initialize_gui() {
     let gui_data = GuiData::new();
     create_list_view(&gui_data);
-    connect_menu_quit(&gui_data);
-    connect_close(&gui_data);
+    connect_menu_options::connect_menu_quit(&gui_data);
+    connect_menu_options::connect_close(&gui_data);
     connect_search_event::connect_search_event(&gui_data);
 
     initialize_dialog_connectors(&gui_data);

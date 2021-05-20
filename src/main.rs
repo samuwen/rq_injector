@@ -2,8 +2,8 @@ mod config_dialog;
 mod configuration;
 mod connect_config_dialog;
 mod connect_detail_buttons;
+mod connect_menu_options;
 mod connect_output_dialog;
-mod connect_quit;
 mod connect_search_event;
 mod connect_selection_change;
 mod detail_pane;
@@ -17,12 +17,13 @@ mod list_view;
 mod main_menu;
 mod output_dialog;
 mod quake_file;
+mod utils;
 
-use dirs::config_dir;
 use flexi_logger::{LevelFilter, LogSpecBuilder, Logger};
 use initialize_gui::initialize_gui;
 use log::*;
 use std::path::PathBuf;
+use utils::*;
 
 fn main() {
     let mut log_builder = LogSpecBuilder::new();
@@ -44,8 +45,7 @@ fn main() {
 
 fn initialize_application() {
     trace!("Starting application");
-    let mut base_config_dir = config_dir().expect("No home dir found");
-    base_config_dir.push("QInjector");
+    let base_config_dir = get_config_path();
     match std::fs::create_dir(&base_config_dir) {
         Ok(_) => trace!("Made base config directory"),
         Err(_) => trace!("Base config directory exists"),
