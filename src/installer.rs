@@ -1,9 +1,8 @@
 use crate::configuration::*;
-use crate::utils::parse_bytes_from_response;
+use crate::request_utils::get_map_from_remote;
 use getset::Getters;
 use log::*;
-use reqwest::blocking::ClientBuilder;
-use std::fs::{remove_file, write, File};
+use std::fs::{remove_file, File};
 use std::io::BufReader;
 use zip::ZipArchive;
 
@@ -70,7 +69,7 @@ impl Installer {
 
     pub fn install_map(&mut self, map_id: String) {
         trace!("Started installing: {}", map_id);
-        self.get_file_from_remote(&map_id);
+        get_map_from_remote(&map_id, &self.download_dir);
         self.unpack_zip_to_dir(&map_id);
         trace!("Done installing: {}", map_id);
     }
@@ -90,33 +89,6 @@ impl Installer {
         trace!("Done uninstalling: {}", self.map_id);
     }
 
-    fn get_file_from_remote(&mut self, map_id: &String) {
-        trace!("Getting file from remote");
-        let url = format!("https://www.quaddicted.com/filebase/{}.zip", map_id);
-        debug!("Getting file from url: {}", url);
-        let client = ClientBuilder::new()
-            .timeout(std::time::Duration::from_secs(60))
-            .build()
-            .unwrap();
-        let response_res = client.get(url).send();
-        let bytes_opt = parse_bytes_from_response(response_res);
-        let bytes = match bytes_opt {
-            Some(b) => b,
-            None => {
-                return;
-            }
-        };
-        let path = format!("{}/{}.zip", self.download_dir, map_id);
-        match write(&path, bytes) {
-            Ok(_) => {
-                debug!("Finished writing zip to downloads");
-            }
-            Err(e) => {
-                error!("Error: {}", e);
-            }
-        };
-    }
-
     fn unpack_zip_to_dir(&mut self, map_id: &String) {
         let mut archive = self.get_zip_archive(map_id);
         let mut files = vec![];
@@ -131,7 +103,7 @@ impl Installer {
                     .build()
                     .unwrap(),
             );
-            let file_path = format!("{}/{}", self.quake_dir, name);
+            let file_path = format!("{}/id1/maps/{}", self.quake_dir, name);
             debug!("Writing out to local file: {}", file_path);
             let mut local_file = File::create(&file_path).unwrap();
             std::io::copy(&mut file, &mut local_file).expect("Couldn't copy zip file to disk");

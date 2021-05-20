@@ -17,6 +17,7 @@ mod list_view;
 mod main_menu;
 mod output_dialog;
 mod quake_file;
+mod request_utils;
 mod utils;
 
 use flexi_logger::{LevelFilter, LogSpecBuilder, Logger};

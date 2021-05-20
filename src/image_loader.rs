@@ -1,9 +1,8 @@
+use crate::request_utils::get_image_from_remote;
 use crate::utils::*;
-use bytes::Bytes;
 use getset::Getters;
 use log::*;
-use reqwest::blocking::ClientBuilder;
-use std::fs::{write, File};
+use std::fs::File;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, Default, Getters)]
@@ -32,35 +31,7 @@ impl ImageLoader {
         let file_result = File::open(&self.path);
         if let Err(_) = file_result {
             // gotta get from remote
-            trace!("Getting image file from remote");
-            let url = format!(
-                "https://www.quaddicted.com/reviews/screenshots/{}.jpg",
-                self.map_id
-            );
-            let client = ClientBuilder::new()
-                .timeout(std::time::Duration::from_secs(60))
-                .build()
-                .unwrap();
-            let response_res = client.get(url).send();
-            let byte_opt = parse_bytes_from_response(response_res);
-            if let Some(bytes) = byte_opt {
-                debug!("Writing out to path: {:?}", self.path);
-                write_file_to_disk(&bytes, &self.path);
-            } else {
-                panic!("Failed to get dem bytes");
-            }
+            get_image_from_remote(&self.map_id, &self.path);
         }
     }
-}
-
-fn write_file_to_disk(bytes: &Bytes, path: impl AsRef<std::path::Path>) -> bool {
-    match write(path, bytes) {
-        Ok(_) => info!("Wrote to file successfully"),
-        Err(e) => {
-            error!("Couldn't write to file: {}", e);
-            println!("Unable to write file out. Do you have permissions?");
-            return false;
-        }
-    }
-    true
 }

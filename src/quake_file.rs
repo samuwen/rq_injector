@@ -1,49 +1,21 @@
+use crate::request_utils::get_database_from_remote;
 use crate::utils::*;
 use getset::Getters;
 use log::*;
 use quick_xml::de::{from_reader, DeError};
-use reqwest::blocking::ClientBuilder;
 use serde::Deserialize;
-use std::fs::write;
 use std::fs::File;
 use std::io::{BufReader, Read};
-use std::path::PathBuf;
 
 pub fn initialize_data() -> Files {
     let mut file_path = get_config_path();
     file_path.push("database.xml");
     let file = match File::open(&file_path) {
         Ok(f) => f,
-        Err(_) => get_data_from_remote(file_path),
+        Err(_) => get_database_from_remote(file_path),
     };
     let reader = BufReader::new(file);
     read_datastore(reader)
-}
-
-fn get_data_from_remote(file_path: PathBuf) -> File {
-    debug!("Getting database from remote");
-    let url = "https://www.quaddicted.com/reviews/quaddicted_database.xml".to_string();
-    let client = ClientBuilder::new()
-        .timeout(std::time::Duration::from_secs(60))
-        .build()
-        .unwrap();
-    let response_res = client.get(url).send();
-    let bytes_opt = parse_bytes_from_response(response_res);
-    let bytes = match bytes_opt {
-        Some(b) => b,
-        None => {
-            panic!("Failed to read the remote database");
-        }
-    };
-    match write(&file_path, bytes) {
-        Ok(_) => {
-            debug!("Finished writing zip to downloads");
-        }
-        Err(e) => {
-            error!("Error: {}", e);
-        }
-    };
-    File::open(file_path).unwrap()
 }
 
 fn read_datastore<R: Read>(reader: BufReader<R>) -> Files {
