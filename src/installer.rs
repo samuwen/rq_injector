@@ -18,14 +18,11 @@ pub struct Installer {
 }
 
 impl Installer {
-    // hack - remove this first init garbage and
-    pub fn new(_first_init: bool) -> Self {
+    pub fn new() -> Self {
         Self {
-            download_dir: String::from("/home/samuwen/Downloads"),
+            download_dir: String::new(),
             path_string: String::new(),
-            quake_dir: String::from(
-                "/home/samuwen/.steam/debian-installation/steamapps/common/Quake/id1/maps",
-            ),
+            quake_dir: String::new(),
             installed_map_pack: None,
             map_id: String::new(),
         }
@@ -36,6 +33,26 @@ impl Installer {
             download_dir: self.download_dir,
             path_string: string,
             quake_dir: self.quake_dir,
+            installed_map_pack: self.installed_map_pack,
+            map_id: self.map_id,
+        }
+    }
+
+    pub fn with_download_dir(self, dir: String) -> Self {
+        Self {
+            download_dir: dir,
+            path_string: self.path_string,
+            quake_dir: self.quake_dir,
+            installed_map_pack: self.installed_map_pack,
+            map_id: self.map_id,
+        }
+    }
+
+    pub fn with_quake_dir(self, dir: String) -> Self {
+        Self {
+            download_dir: self.download_dir,
+            path_string: self.path_string,
+            quake_dir: dir,
             installed_map_pack: self.installed_map_pack,
             map_id: self.map_id,
         }

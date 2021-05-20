@@ -1,4 +1,5 @@
 use derive_builder::Builder;
+use dirs::config_dir;
 use getset::{Getters, Setters};
 use log::*;
 use quick_xml::de::from_reader;
@@ -7,9 +8,10 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, Write};
+use std::path::{Path, PathBuf};
 
-const CONFIG_FILE_PATH: &str = "config.xml";
-const LOCAL_MAPS_FILE_PATH: &str = "installedMaps.xml";
+const CONFIG_FILE_NAME: &str = "config.xml";
+const LOCAL_MAPS_FILE_NAME: &str = "installedMaps.xml";
 
 #[derive(Clone, Default, Debug, Deserialize, Getters, Serialize, Setters)]
 #[getset(get = "pub", set = "pub")]
@@ -23,13 +25,17 @@ pub struct Configuration {
 
 impl Configuration {
     pub fn new() -> Self {
-        let config = read_or_initialize(CONFIG_FILE_PATH, "config");
+        let mut file_path = get_config_file_path();
+        file_path.push(CONFIG_FILE_NAME);
+        let config = read_or_initialize(file_path, "config");
         trace!("{:?}", config);
         config
     }
 
     pub fn write_to_file(&self) {
-        write_to_file(CONFIG_FILE_PATH, self, "config");
+        let mut file_path = get_config_file_path();
+        file_path.push(CONFIG_FILE_NAME);
+        write_to_file(file_path, self, "config");
     }
 }
 
@@ -42,7 +48,10 @@ pub struct LocalMaps {
 
 impl LocalMaps {
     pub fn new() -> Self {
-        let maps = read_or_initialize(LOCAL_MAPS_FILE_PATH, "local maps");
+        let mut file_path = get_config_file_path();
+        file_path.push(LOCAL_MAPS_FILE_NAME);
+        debug!("{:?}", file_path);
+        let maps = read_or_initialize(file_path, "local maps");
         trace!("{:?}", maps);
         maps
     }
@@ -71,7 +80,9 @@ impl LocalMaps {
     }
 
     pub fn write_to_file(&self) {
-        write_to_file(LOCAL_MAPS_FILE_PATH, self, "local maps");
+        let mut file_path = get_config_file_path();
+        file_path.push(LOCAL_MAPS_FILE_NAME);
+        write_to_file(file_path, self, "local maps");
     }
 }
 
@@ -90,8 +101,14 @@ pub struct FileInfo {
     name: String,
 }
 
-fn read_or_initialize<T: DeserializeOwned + Default>(path: &str, name: &str) -> T {
-    trace!("Initializing {} to path: {}", name, path);
+fn get_config_file_path() -> PathBuf {
+    let mut file_path = config_dir().expect("No home dir found");
+    file_path.push("QInjector");
+    file_path
+}
+
+fn read_or_initialize<T: DeserializeOwned + Default>(path: impl AsRef<Path>, name: &str) -> T {
+    trace!("Initializing {}", name);
     let file_opt = File::open(path);
     match file_opt {
         Ok(f) => {
@@ -117,7 +134,7 @@ fn read_or_initialize<T: DeserializeOwned + Default>(path: &str, name: &str) -> 
     }
 }
 
-fn write_to_file<T: Serialize>(path: &str, obj: &T, name: &str) {
+fn write_to_file<T: Serialize>(path: impl AsRef<Path>, obj: &T, name: &str) {
     trace!("Writing {} to file", name);
     let mut file = File::create(path).unwrap();
     match to_writer(&mut file, obj) {

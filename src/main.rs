@@ -18,9 +18,11 @@ mod main_menu;
 mod output_dialog;
 mod quake_file;
 
+use dirs::config_dir;
 use flexi_logger::{LevelFilter, LogSpecBuilder, Logger};
 use initialize_gui::initialize_gui;
 use log::*;
+use std::path::PathBuf;
 
 fn main() {
     let mut log_builder = LogSpecBuilder::new();
@@ -42,14 +44,21 @@ fn main() {
 
 fn initialize_application() {
     trace!("Starting application");
-    // make sure image directory exists
-    match std::fs::create_dir("images") {
-        Ok(_) => {
-            trace!("Made images directory");
-        }
-        Err(_) => {
-            trace!("Image directory already exists");
-        }
+    let mut base_config_dir = config_dir().expect("No home dir found");
+    base_config_dir.push("QInjector");
+    match std::fs::create_dir(&base_config_dir) {
+        Ok(_) => trace!("Made base config directory"),
+        Err(_) => trace!("Base config directory exists"),
     }
+    init_images_dir(base_config_dir);
+
     initialize_gui();
+}
+
+fn init_images_dir(mut config_dir: PathBuf) {
+    config_dir.push("images");
+    match std::fs::create_dir(config_dir) {
+        Ok(_) => trace!("Made images directory"),
+        Err(_) => trace!("images directory exists"),
+    }
 }

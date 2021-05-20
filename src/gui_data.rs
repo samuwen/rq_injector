@@ -5,7 +5,7 @@ use crate::filter_bar::FilterBar;
 use crate::list_view::ListView;
 use crate::main_menu::MainMenu;
 use crate::output_dialog::OutputDialog;
-use crate::quake_file::{initialize_data, QuakeFile};
+use crate::quake_file::QuakeFile;
 use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use gtk::{Builder, Window};
@@ -48,8 +48,7 @@ impl GuiData {
         let config_dialog = ConfigDialog::create_from_builder(&builder);
         let output_dialog = OutputDialog::create_from_builder(&builder);
         let shared_install_state = Rc::new(RefCell::new(LocalMaps::new()));
-        let quake_files = initialize_data();
-        let shared_files_state = Rc::new(RefCell::new(quake_files));
+        let shared_files_state = Rc::new(RefCell::new(vec![]));
         let shared_config_state = Rc::new(RefCell::new(Configuration::new()));
         let shared_images = Rc::new(RefCell::new(init_shared_images()));
         window.set_position(gtk::WindowPosition::CenterAlways);

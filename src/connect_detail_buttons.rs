@@ -17,6 +17,7 @@ pub fn connect_install_map(gui_data: &GuiData) {
     let button = gui_data.detail_pane.btn_install.clone();
     let rec_gui_data = gui_data.clone();
     let shared_install_state = rec_gui_data.shared_install_state.clone();
+    let shared_config_state = rec_gui_data.shared_config_state.clone();
     receiver.attach(None, move |installer| {
         release_thread_name();
         set_installed_state(&rec_gui_data, true, installer.path_string().to_owned());
@@ -31,12 +32,17 @@ pub fn connect_install_map(gui_data: &GuiData) {
         // TODO - look for map in download dir and bypass pinging remote
         let map_id = get_selected_map_id(&con_gui_data);
         let path_string = get_current_path_string(&con_gui_data);
+        let download_dir = shared_config_state.borrow().download_dir().to_owned();
+        let quake_dir = shared_config_state.borrow().quake_dir().to_owned();
         let sender = sender.clone();
         let thread_name = get_thread_name("install");
         thread::Builder::new()
             .name(thread_name)
             .spawn(move || {
-                let mut installer = Installer::new(false).with_path_string(path_string);
+                let mut installer = Installer::new()
+                    .with_download_dir(download_dir)
+                    .with_quake_dir(quake_dir)
+                    .with_path_string(path_string);
                 installer.install_map(map_id);
                 sender.send(installer).expect("Couldn't send");
             })
@@ -50,6 +56,7 @@ pub fn connect_uninstall_map(gui_data: &GuiData) {
     let button = gui_data.detail_pane.btn_uninstall.clone();
     let rec_gui_data = gui_data.clone();
     let shared_install_state = rec_gui_data.shared_install_state.clone();
+    let shared_config_state = rec_gui_data.shared_config_state.clone();
     let rec_shared_install_state = shared_install_state.clone();
     receiver.attach(None, move |installer| {
         release_thread_name();
@@ -70,13 +77,17 @@ pub fn connect_uninstall_map(gui_data: &GuiData) {
             .unwrap()
             .files()
             .to_owned();
+        let download_dir = shared_config_state.borrow().download_dir().to_owned();
+        let quake_dir = shared_config_state.borrow().quake_dir().to_owned();
 
         let sender = sender.clone();
         let thread_name = get_thread_name("uninstall");
         thread::Builder::new()
             .name(thread_name)
             .spawn(move || {
-                let mut installer = Installer::new(false)
+                let mut installer = Installer::new()
+                    .with_download_dir(download_dir)
+                    .with_quake_dir(quake_dir)
                     .with_path_string(path_string)
                     .with_map_id(map_id);
                 installer.uninstall_map(files);

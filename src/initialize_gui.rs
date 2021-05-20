@@ -5,9 +5,12 @@ use crate::connect_quit::*;
 use crate::connect_search_event;
 use crate::connect_selection_change;
 use crate::gui_data::GuiData;
+use crate::quake_file::{initialize_data, Files};
+use glib::{Continue, MainContext, Receiver, Sender, PRIORITY_DEFAULT};
 use gtk::prelude::*;
 use gtk::{TreeIter, TreeModel};
 use log::*;
+use std::thread;
 
 enum Columns {
     Installed = 0,
@@ -50,7 +53,6 @@ fn create_list_view(gui_data: &GuiData) {
     let sw_list = gui_data.list_view.sw_list.clone();
     let list_store = gui_data.list_view.list_store.clone();
     let tree_view = gui_data.list_view.tree_view.clone();
-    populate_list_view(&list_store, gui_data);
     let released_index = gtk::SortColumn::Index(Columns::Released as u32);
     list_store.set_sort_func(released_index, date_sort_fn);
     let rating_index = gtk::SortColumn::Index(Columns::Rating as u32);
@@ -63,6 +65,25 @@ fn create_list_view(gui_data: &GuiData) {
     connect_selection_change::connect_selection_change(gui_data, &tree_view);
     sw_list.add(&tree_view);
     sw_list.show_all();
+
+    let (sender, receiver): (Sender<Files>, Receiver<Files>) =
+        MainContext::channel(PRIORITY_DEFAULT);
+    let rec_gui_data = gui_data.clone();
+    thread::Builder::new()
+        .name("List-0".to_string())
+        .spawn(move || {
+            let files = initialize_data();
+            sender.send(files).expect("Failed to send");
+        })
+        .expect("Failed to spawn thread");
+    receiver.attach(None, move |files| {
+        let rec_gui_data = rec_gui_data.clone();
+        let quake_files = files.files().clone();
+        let shared_files_state = rec_gui_data.shared_files_state.clone();
+        *shared_files_state.borrow_mut() = quake_files;
+        populate_list_view(&list_store, &rec_gui_data);
+        Continue(true)
+    });
 }
 
 fn populate_list_view(list_store: &gtk::ListStore, gui_data: &GuiData) {
