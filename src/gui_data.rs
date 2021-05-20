@@ -28,6 +28,7 @@ pub struct GuiData {
     pub shared_install_state: Rc<RefCell<LocalMaps>>,
     pub shared_files_state: Rc<RefCell<Vec<QuakeFile>>>,
     pub shared_config_state: Rc<RefCell<Configuration>>,
+    pub shared_images: Rc<RefCell<[gdk_pixbuf::Pixbuf; 6]>>,
 }
 
 impl GuiData {
@@ -50,6 +51,7 @@ impl GuiData {
         let quake_files = initialize_data();
         let shared_files_state = Rc::new(RefCell::new(quake_files));
         let shared_config_state = Rc::new(RefCell::new(Configuration::new()));
+        let shared_images = Rc::new(RefCell::new(init_shared_images()));
         window.set_position(gtk::WindowPosition::CenterAlways);
         window.show_all();
         {
@@ -73,6 +75,18 @@ impl GuiData {
             shared_install_state,
             shared_files_state,
             shared_config_state,
+            shared_images,
         }
     }
+}
+
+fn init_shared_images() -> [gdk_pixbuf::Pixbuf; 6] {
+    [
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating0.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating1.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating2.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating3.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating4.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating5.png", 40, 8).unwrap(),
+    ]
 }

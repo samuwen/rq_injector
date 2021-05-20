@@ -45,26 +45,33 @@ fn change_list_data(gui_data: &GuiData, text: String) {
     let shared_install_state = gui_data.shared_install_state.clone();
     let clear_button = gui_data.filter_bar.btn_clear_filter.clone();
     let tree_view = gui_data.list_view.tree_view.clone();
+    let shared_images = gui_data.shared_images.clone();
     let selection = tree_view.get_selection();
     // Set it so nothing can be selected while we update the list
     selection.set_mode(gtk::SelectionMode::None);
     selection.unselect_all();
     clear_button.set_sensitive(text.len() > 0);
-    let col_indices = [0, 1, 2, 3, 4, 5];
+    let col_indices = [0, 1, 2, 3, 4, 5, 6];
     list.clear();
     shared_files_state.borrow().iter().for_each(|file| {
         let valid_id = compare_text(file.id(), &text);
         let valid_title = compare_text(file.title(), &text);
         let valid_author = compare_text(file.author(), &text);
         let valid_date = compare_text(file.date(), &text);
+        let rating = match u8::from_str_radix(file.rating(), 10) {
+            Ok(r) => r,
+            Err(_) => 0,
+        };
+        let rating_image = &shared_images.borrow()[rating as usize];
         if valid_id || valid_title || valid_author || valid_date {
-            let values: [&dyn ToValue; 6] = [
+            let values: [&dyn ToValue; 7] = [
                 &shared_install_state.borrow().is_map_installed(file.id()),
                 file.id(),
                 file.title(),
                 file.author(),
                 file.date(),
-                file.rating(),
+                rating_image,
+                &rating,
             ];
             list.set(&list.append(), &col_indices, &values);
         }

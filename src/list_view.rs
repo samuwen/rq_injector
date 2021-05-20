@@ -1,4 +1,4 @@
-use glib::types::Type;
+use glib::Type;
 use gtk::prelude::*;
 use gtk::{Builder, ListStore, ScrolledWindow, TreeView};
 
@@ -11,13 +11,14 @@ pub struct ListView {
 
 impl ListView {
     pub fn create_from_builder(builder: &Builder) -> Self {
-        let col_types: [Type; 6] = [
+        let col_types: [Type; 7] = [
             Type::Bool,
             Type::String,
             Type::String,
             Type::String,
             Type::String,
-            Type::String,
+            gdk_pixbuf::Pixbuf::static_type(),
+            Type::U8,
         ];
         let sw_list: ScrolledWindow = builder
             .get_object("sw_list")

@@ -16,6 +16,7 @@ enum Columns {
     Author,
     Released,
     Rating,
+    RatingSort, // for sneaky hidden column
 }
 
 impl Columns {
@@ -27,6 +28,7 @@ impl Columns {
             3 => String::from("Author"),
             4 => String::from("Released"),
             5 => String::from("Rating"),
+            6 => String::from("RatingSort"),
             _ => panic!("Dude cmon"),
         }
     }
@@ -49,8 +51,10 @@ fn create_list_view(gui_data: &GuiData) {
     let list_store = gui_data.list_view.list_store.clone();
     let tree_view = gui_data.list_view.tree_view.clone();
     populate_list_view(&list_store, gui_data);
-    let c_index = gtk::SortColumn::Index(Columns::Released as u32);
-    list_store.set_sort_func(c_index, date_sort_fn);
+    let released_index = gtk::SortColumn::Index(Columns::Released as u32);
+    list_store.set_sort_func(released_index, date_sort_fn);
+    let rating_index = gtk::SortColumn::Index(Columns::Rating as u32);
+    list_store.set_sort_func(rating_index, rating_sort_fn);
     tree_view
         .get_selection()
         .set_mode(gtk::SelectionMode::Single);
@@ -63,16 +67,23 @@ fn create_list_view(gui_data: &GuiData) {
 
 fn populate_list_view(list_store: &gtk::ListStore, gui_data: &GuiData) {
     let shared_install_state = gui_data.shared_install_state.clone();
-    let col_indices = [0, 1, 2, 3, 4, 5];
+    let col_indices = [0, 1, 2, 3, 4, 5, 6];
     let shared_files_state = gui_data.shared_files_state.clone();
+    let shared_images = gui_data.shared_images.clone();
     for file in shared_files_state.borrow().iter() {
-        let values: [&dyn ToValue; 6] = [
+        let rating = match u8::from_str_radix(file.rating(), 10) {
+            Ok(r) => r,
+            Err(_) => 0,
+        };
+        let rating_image = &shared_images.borrow()[rating as usize];
+        let values: [&dyn ToValue; 7] = [
             &shared_install_state.borrow().is_map_installed(file.id()),
             file.id(),
             file.title(),
             file.author(),
             file.date(),
-            file.rating(),
+            rating_image,
+            &rating,
         ];
         list_store.set(&list_store.append(), &col_indices, &values);
     }
@@ -91,7 +102,7 @@ fn create_tree_view_columns(tree_view: &gtk::TreeView) {
     let title_column = create_text_column("Title", &renderer, Columns::Title);
     let author_column = create_text_column("Author", &renderer, Columns::Author);
     let released_column = create_text_column("Released", &renderer, Columns::Released);
-    let rating_column = create_text_column("Rating", &renderer, Columns::Rating);
+    let rating_column = create_rating_column();
 
     tree_view.append_column(&installed_column);
     tree_view.append_column(&id_column);
@@ -124,6 +135,21 @@ fn create_text_column(
     column
 }
 
+fn create_rating_column() -> gtk::TreeViewColumn {
+    let col_int = Columns::Rating as i32;
+    let renderer = gtk::CellRendererPixbuf::new();
+    let column = gtk::TreeViewColumnBuilder::new()
+        .max_width(200)
+        .clickable(true)
+        .sort_column_id(col_int)
+        .expand(true)
+        .resizable(true)
+        .build();
+    column.pack_start(&renderer, true);
+    column.add_attribute(&renderer, "pixbuf", col_int);
+    column
+}
+
 fn initialize_dialog_connectors(gui_data: &GuiData) {
     connect_config_dialog::connect_activate(gui_data);
     connect_config_dialog::connect_cancel(gui_data);
@@ -145,6 +171,20 @@ fn date_sort_fn(model: &TreeModel, row_1: &TreeIter, row_2: &TreeIter) -> std::c
     let date_1 = get_date(model.get_value(row_1, Columns::Released as i32));
     let date_2 = get_date(model.get_value(row_2, Columns::Released as i32));
     date_1.cmp(&date_2)
+}
+
+fn rating_sort_fn(model: &TreeModel, row_1: &TreeIter, row_2: &TreeIter) -> std::cmp::Ordering {
+    let rating_1: u8 = model
+        .get_value(row_1, Columns::RatingSort as i32)
+        .get()
+        .unwrap()
+        .unwrap();
+    let rating_2: u8 = model
+        .get_value(row_2, Columns::RatingSort as i32)
+        .get()
+        .unwrap()
+        .unwrap();
+    rating_1.cmp(&rating_2)
 }
 
 fn get_date(val: glib::Value) -> chrono::NaiveDate {
