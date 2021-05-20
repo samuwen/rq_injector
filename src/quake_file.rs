@@ -8,11 +8,15 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 
 pub fn initialize_data() -> Files {
+    trace!("Initializing data");
     let mut file_path = get_config_path();
     file_path.push("database.xml");
     let file = match File::open(&file_path) {
-        Ok(f) => f,
-        Err(_) => get_database_from_remote(file_path),
+        Ok(f) => {
+            debug!("Local database found. Using");
+            f
+        }
+        Err(_) => get_database_from_remote(),
     };
     let reader = BufReader::new(file);
     read_datastore(reader)
