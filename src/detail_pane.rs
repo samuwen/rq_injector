@@ -66,7 +66,7 @@ impl DetailPane {
         }
     }
 
-    pub fn update(&self, file: &QuakeFile, is_local: bool) {
+    pub fn update(&self, file: &QuakeFile, is_local: bool, is_offline: bool) {
         trace!("Updating detail view");
         self.lbl_title.set_text(file.title());
         self.lbl_description.set_text(file.description());
@@ -75,7 +75,7 @@ impl DetailPane {
             .set_text(&naive_date.format("%m-%d-%Y").to_string());
         let size_text = convert_size_string(file.size());
         self.lbl_size.set_text(&size_text);
-        self.btn_install.set_sensitive(!is_local);
+        self.btn_install.set_sensitive(!is_local && !is_offline);
         self.btn_uninstall.set_sensitive(is_local);
         self.btn_play.set_sensitive(is_local);
 

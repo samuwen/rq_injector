@@ -40,4 +40,9 @@ impl MainMenu {
             menu_engine_configuration,
         }
     }
+
+    pub fn init_states(&self, is_offline: bool) {
+        self.menu_reload.set_sensitive(!is_offline);
+        self.menu_offline.set_active(is_offline);
+    }
 }

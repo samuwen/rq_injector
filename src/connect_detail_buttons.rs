@@ -160,11 +160,12 @@ pub fn connect_play_button(gui_data: &GuiData) {
 
 fn set_installed_state(gui_data: &GuiData, is_local: bool, path_string: String) {
     let current_path_string = get_current_path_string(gui_data);
+    let config_state = gui_data.shared_config_state.clone();
     if path_string == current_path_string {
         let install_button = gui_data.detail_pane.btn_install.clone();
         let uninstall_button = gui_data.detail_pane.btn_uninstall.clone();
         let play_button = gui_data.detail_pane.btn_play.clone();
-        install_button.set_sensitive(!is_local);
+        install_button.set_sensitive(!is_local && !config_state.borrow().is_offline());
         uninstall_button.set_sensitive(is_local);
         play_button.set_sensitive(is_local);
     }

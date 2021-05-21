@@ -55,6 +55,37 @@ pub fn connect_reload(gui_data: &GuiData) {
     });
 }
 
+pub fn connect_offline(gui_data: &GuiData) {
+    trace!("Initializing offline connection");
+    let menu_reload = gui_data.main_menu.menu_reload.clone();
+    let menu_offline = gui_data.main_menu.menu_offline.clone();
+    let config_state = gui_data.shared_config_state.clone();
+    let install_state = gui_data.shared_install_state.clone();
+    let tree_view = gui_data.list_view.tree_view.clone();
+    let btn_install = gui_data.detail_pane.btn_install.clone();
+    menu_offline.connect_toggled(move |me| {
+        let active_state = me.get_active();
+        let msg = match active_state {
+            true => "offline",
+            false => "online",
+        };
+        info!("Switching to {} mode", msg);
+        menu_reload.set_sensitive(!active_state);
+        match tree_view.get_selection().get_selected() {
+            Some((model, iter)) => {
+                let string_res: Result<Option<String>, glib::value::GetError> =
+                    model.get_value(&iter, 1).get();
+                let id_string = string_res.unwrap().unwrap();
+                let is_local = install_state.borrow().is_map_installed(&id_string);
+                debug!("Install button is now: {}", !active_state && !is_local);
+                btn_install.set_sensitive(!active_state && !is_local);
+            }
+            None => (),
+        }
+        config_state.borrow_mut().set_is_offline(active_state);
+    });
+}
+
 fn add_key_commands(gui_data: &GuiData) {
     let menu_quit = gui_data.main_menu.menu_quit.clone();
     let window = gui_data.window.clone();

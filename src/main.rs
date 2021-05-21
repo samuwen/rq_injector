@@ -24,6 +24,7 @@ use flexi_logger::{LevelFilter, LogSpecBuilder, Logger};
 use initialize_gui::initialize_gui;
 use log::*;
 use std::path::PathBuf;
+use std::process::Command;
 use utils::*;
 
 fn main() {
@@ -51,7 +52,9 @@ fn initialize_application() {
         Ok(_) => trace!("Made base config directory"),
         Err(_) => trace!("Base config directory exists"),
     }
+    let copy_path = base_config_dir.clone();
     init_images_dir(base_config_dir);
+    init_not_found_image(copy_path);
 
     initialize_gui();
 }
@@ -62,4 +65,14 @@ fn init_images_dir(mut config_dir: PathBuf) {
         Ok(_) => trace!("Made images directory"),
         Err(_) => trace!("images directory exists"),
     }
+}
+
+fn init_not_found_image(mut copy_path: PathBuf) {
+    copy_path.push("images");
+    copy_path.push("not_found.png");
+    Command::new("cp")
+        .arg("resources/not_found.png")
+        .arg(copy_path)
+        .output()
+        .expect("Failed to copy not_found image");
 }

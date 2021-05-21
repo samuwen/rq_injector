@@ -22,16 +22,24 @@ impl ImageLoader {
         }
     }
 
-    pub fn load_map_image(&mut self) {
+    pub fn load_map_image(&mut self, is_offline: bool) {
         let mut path = get_config_path();
         path.push("images");
         path.push(format!("{}.jpg", self.map_id));
         self.path = path;
-        debug!("Attempting to load image at: {:?}", self.path);
+        info!("Attempting to load image at: {:?}", self.path);
         let file_result = File::open(&self.path);
         if let Err(_) = file_result {
             // gotta get from remote
-            get_image_from_remote(&self.map_id, &self.path);
+            if !is_offline {
+                get_image_from_remote(&self.map_id, &self.path);
+            } else {
+                debug!("We're offline, set path to not found image");
+                let mut path = get_config_path();
+                path.push("images");
+                path.push("not_found.png");
+                self.path = path;
+            }
         }
     }
 }

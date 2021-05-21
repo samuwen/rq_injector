@@ -11,7 +11,7 @@ pub fn initialize_gui() {
     let gui_data = GuiData::new();
     create_list_view(&gui_data);
 
-    initialize_menu_connectors(&gui_data);
+    initialize_menu(&gui_data);
     initialize_dialog_connectors(&gui_data);
     initialize_detail_buttons(&gui_data);
     initialize_output_dialog(&gui_data);
@@ -44,8 +44,13 @@ fn initialize_output_dialog(gui_data: &GuiData) {
     connect_output_dialog::connect_ok(gui_data);
 }
 
-fn initialize_menu_connectors(gui_data: &GuiData) {
+fn initialize_menu(gui_data: &GuiData) {
+    let config_state = gui_data.shared_config_state.clone();
+    let main_menu = gui_data.main_menu.clone();
+    main_menu.init_states(*config_state.borrow().is_offline());
+
     connect_menu_options::connect_menu_quit(gui_data);
     connect_menu_options::connect_close(gui_data);
     connect_menu_options::connect_reload(gui_data);
+    connect_menu_options::connect_offline(gui_data);
 }

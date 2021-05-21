@@ -21,6 +21,7 @@ pub struct Configuration {
     download_dir: String,
     rogue_installed: bool,
     hip_installed: bool,
+    is_offline: bool,
 }
 
 impl Configuration {
