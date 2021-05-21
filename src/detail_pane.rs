@@ -1,6 +1,6 @@
 use crate::quake_file::QuakeFile;
 use chrono::NaiveDate;
-use gdk_pixbuf::Pixbuf;
+use gdk_pixbuf::{Pixbuf, PixbufAnimation};
 use gtk::prelude::*;
 use gtk::{Builder, Button, ComboBoxText, Image, Label, ScrolledWindow};
 use log::*;
@@ -93,6 +93,11 @@ impl DetailPane {
             self.dropdown.set_active_iter(Some(&iter));
         }
         self.dropdown.set_sensitive(start_maps.len() > 2);
+        let mut path = std::path::PathBuf::new();
+        path.push("resources");
+        path.push("loading.gif");
+        let pixbuf = PixbufAnimation::from_file(path).unwrap();
+        self.set_spinner(pixbuf);
     }
 
     pub fn clear(&self) {
@@ -105,6 +110,11 @@ impl DetailPane {
         self.btn_play.set_sensitive(false);
         self.img_current_map.set_visible(false);
         self.dropdown.remove_all();
+    }
+
+    pub fn set_spinner(&self, anim: PixbufAnimation) {
+        self.img_current_map.set_from_animation(&anim);
+        self.img_current_map.set_visible(true);
     }
 
     pub fn update_image(&self, pixbuf: Pixbuf) {

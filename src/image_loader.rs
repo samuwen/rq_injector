@@ -35,8 +35,8 @@ impl ImageLoader {
                 get_image_from_remote(&self.map_id, &self.path);
             } else {
                 debug!("We're offline, set path to not found image");
-                let mut path = get_config_path();
-                path.push("images");
+                let mut path = PathBuf::new();
+                path.push("resources");
                 path.push("not_found.png");
                 self.path = path;
             }
