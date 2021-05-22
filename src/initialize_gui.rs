@@ -57,12 +57,15 @@ fn initialize_menu(gui_data: &GuiData) {
     let main_menu = gui_data.main_menu.clone();
     main_menu.init_states(*config_state.borrow().is_offline());
     init_text(main_menu, gui_data);
+    let clear_cache_dialog = gui_data.clear_cache_dialog.clone();
+    init_text(clear_cache_dialog, gui_data);
 
     connect_menu_options::connect_menu_quit(gui_data);
     connect_menu_options::connect_close(gui_data);
     connect_menu_options::connect_reload(gui_data);
     connect_menu_options::connect_offline(gui_data);
-    connect_menu_options::connect_cache_clear_ok(gui_data);
+    connect_menu_options::connect_clear_cache_ok(gui_data);
+    connect_menu_options::connect_clear_cache_cancel(gui_data);
     connect_menu_options::connect_clear_cache(gui_data);
 }
 

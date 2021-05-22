@@ -1,4 +1,5 @@
 use crate::gui_data::GuiData;
+use crate::locales::Locale;
 use gtk::prelude::*;
 use gtk::{Button, Dialog, Entry, FileChooserAction, ResponseType};
 use log::*;
@@ -54,32 +55,56 @@ pub fn connect_ok(gui_data: &GuiData) {
 pub fn connect_selects(gui_data: &GuiData) {
     trace!("Initializing select buttons");
     let dialog = gui_data.config_dialog.clone();
+    let config = gui_data.shared_config_state.clone();
     connect_input(
         dialog.btn_quake_dir.clone(),
         dialog.ent_quake_dir.clone(),
         dialog.dlg_config.clone(),
-        "quake folder".to_string(),
+        config
+            .borrow()
+            .current_locale()
+            .config_dialog_quake_dir_text()
+            .to_string(),
         FileChooserAction::SelectFolder,
+        config.borrow().current_locale().clone(),
     );
     connect_input(
         dialog.btn_download_dir.clone(),
         dialog.ent_download_dir.clone(),
         dialog.dlg_config.clone(),
-        "download folder".to_string(),
+        config
+            .borrow()
+            .current_locale()
+            .config_dialog_download_dir_text()
+            .to_string(),
         FileChooserAction::SelectFolder,
+        config.borrow().current_locale().clone(),
     );
     connect_input(
         dialog.btn_quake_exe.clone(),
         dialog.ent_quake_exe.clone(),
         dialog.dlg_config.clone(),
-        "quake executable".to_string(),
+        config
+            .borrow()
+            .current_locale()
+            .config_dialog_quake_exe_text()
+            .to_string(),
         FileChooserAction::Open,
+        config.borrow().current_locale().clone(),
     );
 }
 
-fn connect_input(btn: Button, ent: Entry, dlg: Dialog, name: String, action: FileChooserAction) {
+fn connect_input(
+    btn: Button,
+    ent: Entry,
+    dlg: Dialog,
+    name: String,
+    action: FileChooserAction,
+    locale: Locale,
+) {
     btn.connect_clicked(move |_| {
-        handle_file_dialog(&dlg, &ent, &name, action);
+        let locale = locale.clone();
+        handle_file_dialog(&dlg, &ent, &name, action, locale);
     });
 }
 
@@ -88,16 +113,21 @@ fn handle_file_dialog(
     input: &gtk::Entry,
     name: &str,
     action: FileChooserAction,
+    locale: Locale,
 ) {
     let input_msg = format!("Setting {} input to: ", name);
-    let pick_msg = format!("Please select {}", name);
+    // string interpolation: Rust style
+    let title_string = locale.file_chooser_title().clone();
+    let mut split_vec: Vec<&str> = title_string.split("{}").collect();
+    split_vec.insert(1, name);
+    let pick_msg: String = split_vec.join("");
     let file_dialog = gtk::FileChooserDialog::with_buttons(
         Some(&pick_msg),
         Some(dialog),
         action,
         &[
-            ("_Cancel", ResponseType::Cancel),
-            ("_Open", ResponseType::Accept),
+            (locale.universal_cancel_button(), ResponseType::Cancel),
+            (locale.universal_ok_button(), ResponseType::Accept),
         ],
     );
     match file_dialog.run() {

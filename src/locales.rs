@@ -101,6 +101,7 @@ pub struct Locale {
     clear_dialog_text: String,
     output_dialog_title: String,
     database_corrupt_error: String,
+    file_chooser_title: String,
 }
 
 pub fn init_locale(locale_dir: PathBuf, locale_choice: String) -> Locale {

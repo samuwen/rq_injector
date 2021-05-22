@@ -35,4 +35,5 @@
     clear_dialog_text="Clearing the cache will remove all locally stored data and close the application. You will need to restart the application to continue"
     output_dialog_title="Output"
     database_corrupt_error="Your data is corrupt. Please delete the 'database.xml' file and try again"
+    file_chooser_title="Please select {}"
     />

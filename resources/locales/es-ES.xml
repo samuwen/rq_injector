@@ -35,4 +35,5 @@
     clear_dialog_text="Al borrar la caché, se eliminarán todos los datos almacenados localmente y se cerrará la aplicación. Deberá reiniciar la aplicación para continuar."
     output_dialog_title="Salida"
     database_corrupt_error="Tus datos están corruptos. Limpia la caché y vuelve a intentarlo."
+    file_chooser_title="Selectar {} por favor"
     />

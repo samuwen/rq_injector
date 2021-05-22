@@ -96,16 +96,13 @@ pub fn connect_clear_cache(gui_data: &GuiData) {
     trace!("Initializing cache clear");
     let menu_clear_cache = gui_data.main_menu.menu_clear_cache.clone();
     let clear_cache_dialog = gui_data.clear_cache_dialog.dlg_you_sure.clone();
-    let txt_clear_cache_warning = gui_data.clear_cache_dialog.txt_clear_cache_warning.clone();
     menu_clear_cache.connect_activate(move |_| {
         info!("Clear cache request made");
-        let text = "Clearing the cache will remove all locally stored data and close the application. You will need to restart the application to continue";
-        txt_clear_cache_warning.get_buffer().unwrap().set_text(text);
         clear_cache_dialog.show_all();
     });
 }
 
-pub fn connect_cache_clear_ok(gui_data: &GuiData) {
+pub fn connect_clear_cache_ok(gui_data: &GuiData) {
     trace!("Initializing cache clear ok button");
     let btn_confirm_cache_clear = gui_data.clear_cache_dialog.btn_confirm_clear_cache.clone();
     let clear_cache_dialog = gui_data.clear_cache_dialog.dlg_you_sure.clone();
@@ -128,6 +125,15 @@ pub fn connect_cache_clear_ok(gui_data: &GuiData) {
             Err(e) => error!("Error removing cache directory: {}", e),
         };
         std::process::exit(0);
+    });
+}
+
+pub fn connect_clear_cache_cancel(gui_data: &GuiData) {
+    trace!("Initializing clear cache cancel button");
+    let btn_cancel_clear_cache = gui_data.clear_cache_dialog.btn_cancel_clear_cache.clone();
+    let clear_cache_dialog = gui_data.clear_cache_dialog.dlg_you_sure.clone();
+    btn_cancel_clear_cache.connect_clicked(move |_| {
+        clear_cache_dialog.hide();
     });
 }
 
