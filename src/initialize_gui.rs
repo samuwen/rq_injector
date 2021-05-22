@@ -53,4 +53,6 @@ fn initialize_menu(gui_data: &GuiData) {
     connect_menu_options::connect_close(gui_data);
     connect_menu_options::connect_reload(gui_data);
     connect_menu_options::connect_offline(gui_data);
+    connect_menu_options::connect_cache_clear_ok(gui_data);
+    connect_menu_options::connect_clear_cache(gui_data);
 }

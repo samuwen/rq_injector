@@ -23,7 +23,7 @@ pub fn connect_install_map(gui_data: &GuiData) {
         set_installed_state(&rec_gui_data, true, installer.path_string().to_owned());
         let map_pack = installer.installed_map_pack().clone().unwrap();
         shared_install_state.borrow_mut().add_map(map_pack);
-        Continue(false)
+        Continue(true)
     });
     let con_gui_data = gui_data.clone();
 
@@ -63,7 +63,7 @@ pub fn connect_uninstall_map(gui_data: &GuiData) {
         set_installed_state(&rec_gui_data, false, installer.path_string().to_owned());
         let map_id = installer.map_id();
         rec_shared_install_state.borrow_mut().remove_map(map_id);
-        Continue(false)
+        Continue(true)
     });
 
     let con_gui_data = gui_data.clone();
@@ -123,10 +123,14 @@ pub fn connect_play_button(gui_data: &GuiData) {
     });
     button.connect_clicked(move |_| {
         let model = dropdown.get_model().unwrap();
-        let iter = dropdown.get_active_iter().unwrap();
-        let string_res: Result<Option<String>, glib::value::GetError> =
-            model.get_value(&iter, 0).get();
-        let start_map = string_res.unwrap().unwrap();
+        let start_map = match dropdown.get_active_iter() {
+            Some(iter) => {
+                let string_res: Result<Option<String>, glib::value::GetError> =
+                    model.get_value(&iter, 0).get();
+                string_res.unwrap().unwrap()
+            }
+            None => "start".to_string(),
+        };
         let map_id = get_selected_map_id(&gui_data);
         let quake_exe = shared_config_state.borrow().quake_exe().to_owned();
         let quake_dir = shared_config_state.borrow().quake_dir().to_owned();

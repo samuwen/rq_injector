@@ -1,3 +1,4 @@
+mod clear_cache_dialog;
 mod config_dialog;
 mod configuration;
 mod connect_config_dialog;

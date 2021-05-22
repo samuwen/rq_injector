@@ -7,6 +7,7 @@ pub struct MainMenu {
     pub menu_reload: MenuItem,
     pub menu_check_for_installed: MenuItem,
     pub menu_offline: CheckMenuItem,
+    pub menu_clear_cache: MenuItem,
     pub menu_quit: MenuItem,
     pub menu_engine_configuration: MenuItem,
 }
@@ -22,6 +23,9 @@ impl MainMenu {
         let menu_check_for_installed: MenuItem = builder
             .get_object("menu_check_for_installed")
             .expect("Failed to get menu_check_for_installed");
+        let menu_clear_cache: MenuItem = builder
+            .get_object("menu_clear_cache")
+            .expect("Failed to get menu_clear_cache");
         let menu_offline: CheckMenuItem = builder
             .get_object("menu_offline")
             .expect("Failed to get menu_offline");
@@ -38,6 +42,7 @@ impl MainMenu {
             menu_offline,
             menu_quit,
             menu_engine_configuration,
+            menu_clear_cache,
         }
     }
 

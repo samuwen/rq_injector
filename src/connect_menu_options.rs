@@ -1,10 +1,13 @@
 use crate::gui_data::GuiData;
 use crate::list_view::populate_list_view;
 use crate::request_utils::get_database_from_remote;
+use crate::utils::get_config_path;
 use glib::{Continue, MainContext, Receiver, Sender, PRIORITY_DEFAULT};
 use gtk::prelude::*;
 use gtk::AccelGroup;
 use log::*;
+use std::fs::{remove_dir, remove_dir_all, remove_file};
+use std::path::PathBuf;
 use std::thread;
 
 pub fn connect_menu_quit(gui_data: &GuiData) {
@@ -12,7 +15,7 @@ pub fn connect_menu_quit(gui_data: &GuiData) {
     let menu_quit = gui_data.main_menu.menu_quit.clone();
     let window = gui_data.window.clone();
     menu_quit.connect_activate(move |_| {
-        debug!("Quit request made");
+        info!("Quit request made");
         window.close();
     });
     add_key_commands(gui_data);
@@ -24,7 +27,7 @@ pub fn connect_close(gui_data: &GuiData) {
     let shared_install_state = gui_data.shared_install_state.clone();
     let shared_config_state = gui_data.shared_config_state.clone();
     window.connect_destroy(move |_| {
-        debug!("Destroying window");
+        info!("Destroying window");
         shared_install_state.borrow().write_to_file();
         shared_config_state.borrow().write_to_file();
     });
@@ -35,7 +38,7 @@ pub fn connect_reload(gui_data: &GuiData) {
     let menu_reload = gui_data.main_menu.menu_reload.clone();
     let gui_data = gui_data.clone();
     menu_reload.connect_activate(move |_| {
-        debug!("Database reload request made");
+        info!("Database reload request made");
         let (sender, receiver): (Sender<bool>, Receiver<bool>) =
             MainContext::channel(PRIORITY_DEFAULT);
         thread::Builder::new()
@@ -84,6 +87,54 @@ pub fn connect_offline(gui_data: &GuiData) {
         }
         config_state.borrow_mut().set_is_offline(active_state);
     });
+}
+
+pub fn connect_clear_cache(gui_data: &GuiData) {
+    trace!("Initializing cache clear");
+    let menu_clear_cache = gui_data.main_menu.menu_clear_cache.clone();
+    let clear_cache_dialog = gui_data.clear_cache_dialog.dlg_you_sure.clone();
+    let txt_clear_cache_warning = gui_data.clear_cache_dialog.txt_clear_cache_warning.clone();
+    menu_clear_cache.connect_activate(move |_| {
+        info!("Clear cache request made");
+        let text = "Clearing the cache will remove all locally stored data and close the application. You will need to restart the application to continue";
+        txt_clear_cache_warning.get_buffer().unwrap().set_text(text);
+        clear_cache_dialog.show_all();
+    });
+}
+
+pub fn connect_cache_clear_ok(gui_data: &GuiData) {
+    trace!("Initializing cache clear ok button");
+    let btn_confirm_cache_clear = gui_data.clear_cache_dialog.btn_confirm_clear_cache.clone();
+    let clear_cache_dialog = gui_data.clear_cache_dialog.dlg_you_sure.clone();
+    let config_dir = get_config_path();
+    btn_confirm_cache_clear.connect_clicked(move |_| {
+        info!("Clear cache ok button pressed");
+        debug!("{:?}", config_dir);
+        clear_cache_dialog.hide();
+        remove_file_with_name(&config_dir, "config.xml");
+        remove_file_with_name(&config_dir, "database.xml");
+        remove_file_with_name(&config_dir, "installedMaps.xml");
+        let mut images = config_dir.clone();
+        images.push("images");
+        match remove_dir_all(&images) {
+            Ok(_) => debug!("Removed images directory"),
+            Err(e) => error!("Error removing images directory: {}", e),
+        };
+        match remove_dir(&config_dir) {
+            Ok(_) => debug!("Removed cache directory"),
+            Err(e) => error!("Error removing cache directory: {}", e),
+        };
+        std::process::exit(0);
+    });
+}
+
+pub fn remove_file_with_name(config_dir: &PathBuf, name: &str) {
+    let mut file_path = config_dir.clone();
+    file_path.push(name);
+    match remove_file(&file_path) {
+        Ok(_) => debug!("Removed file: {}", name),
+        Err(e) => error!("Failed to remove file: {} because {}", name, e),
+    }
 }
 
 fn add_key_commands(gui_data: &GuiData) {

@@ -1,3 +1,4 @@
+use crate::clear_cache_dialog::ClearCacheDialog;
 use crate::config_dialog::ConfigDialog;
 use crate::configuration::{Configuration, LocalMaps};
 use crate::detail_pane::DetailPane;
@@ -24,6 +25,7 @@ pub struct GuiData {
     pub list_view: ListView,
     pub config_dialog: ConfigDialog,
     pub output_dialog: OutputDialog,
+    pub clear_cache_dialog: ClearCacheDialog,
 
     pub shared_install_state: Rc<RefCell<LocalMaps>>,
     pub shared_files_state: Rc<RefCell<Vec<QuakeFile>>>,
@@ -47,6 +49,7 @@ impl GuiData {
         let list_view = ListView::create_from_builder(&builder);
         let config_dialog = ConfigDialog::create_from_builder(&builder);
         let output_dialog = OutputDialog::create_from_builder(&builder);
+        let clear_cache_dialog = ClearCacheDialog::create_from_builder(&builder);
         let shared_install_state = Rc::new(RefCell::new(LocalMaps::new()));
         let shared_files_state = Rc::new(RefCell::new(vec![]));
         let shared_config_state = Rc::new(RefCell::new(Configuration::new()));
@@ -71,6 +74,7 @@ impl GuiData {
             list_view,
             config_dialog,
             output_dialog,
+            clear_cache_dialog,
             shared_install_state,
             shared_files_state,
             shared_config_state,
