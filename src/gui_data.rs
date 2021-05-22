@@ -50,9 +50,11 @@ impl GuiData {
         let config_dialog = ConfigDialog::create_from_builder(&builder);
         let output_dialog = OutputDialog::create_from_builder(&builder);
         let clear_cache_dialog = ClearCacheDialog::create_from_builder(&builder);
-        let shared_install_state = Rc::new(RefCell::new(LocalMaps::new()));
+        let configuration = Configuration::new();
+        let config_dir = configuration.config_dir().clone();
+        let shared_install_state = Rc::new(RefCell::new(LocalMaps::new(config_dir)));
         let shared_files_state = Rc::new(RefCell::new(vec![]));
-        let shared_config_state = Rc::new(RefCell::new(Configuration::new()));
+        let shared_config_state = Rc::new(RefCell::new(configuration));
         let shared_images = Rc::new(RefCell::new(init_shared_images()));
         window.set_position(gtk::WindowPosition::CenterAlways);
         window.show_all();

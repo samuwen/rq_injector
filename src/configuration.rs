@@ -1,5 +1,5 @@
-use crate::utils::*;
 use derive_builder::Builder;
+use dirs::config_dir;
 use getset::{Getters, Setters};
 use log::*;
 use quick_xml::de::from_reader;
@@ -8,25 +8,32 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 const CONFIG_FILE_NAME: &str = "config.xml";
 const LOCAL_MAPS_FILE_NAME: &str = "installedMaps.xml";
 
-#[derive(Clone, Default, Debug, Deserialize, Getters, Serialize, Setters)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize, Setters)]
 #[getset(get = "pub", set = "pub")]
 pub struct Configuration {
+    #[serde(default = "Default::default")]
     quake_dir: String,
+    #[serde(default = "Default::default")]
     quake_exe: String,
+    #[serde(default = "Default::default")]
     download_dir: String,
     rogue_installed: bool,
     hip_installed: bool,
     is_offline: bool,
+    config_dir: PathBuf,
+    image_cache_dir: PathBuf,
+    image_resources_dir: PathBuf,
+    locale_resources_dir: PathBuf,
 }
 
 impl Configuration {
     pub fn new() -> Self {
-        let mut file_path = get_config_path();
+        let mut file_path = config_dir().expect("No config dir found");
         file_path.push(CONFIG_FILE_NAME);
         let config = read_or_initialize(file_path, "config");
         trace!("{:?}", config);
@@ -34,9 +41,36 @@ impl Configuration {
     }
 
     pub fn write_to_file(&self) {
-        let mut file_path = get_config_path();
+        let mut file_path = self.config_dir.clone();
         file_path.push(CONFIG_FILE_NAME);
         write_to_file(file_path, self, "config");
+    }
+}
+
+impl Default for Configuration {
+    fn default() -> Self {
+        let mut config_dir = config_dir().expect("No config dir found");
+        config_dir.push("QInjector");
+        let mut image_cache_dir = config_dir.clone();
+        image_cache_dir.push("images");
+        let mut image_resources_dir = std::env::current_dir().expect("No current dir found");
+        image_resources_dir.push("resources");
+        image_resources_dir.push("images");
+        let mut locale_resources_dir = std::env::current_dir().expect("No current dir found");
+        locale_resources_dir.push("resources");
+        locale_resources_dir.push("locales");
+        Self {
+            quake_dir: Default::default(),
+            quake_exe: Default::default(),
+            download_dir: Default::default(),
+            rogue_installed: Default::default(),
+            hip_installed: Default::default(),
+            is_offline: Default::default(),
+            config_dir,
+            image_cache_dir,
+            image_resources_dir,
+            locale_resources_dir,
+        }
     }
 }
 
@@ -48,8 +82,8 @@ pub struct LocalMaps {
 }
 
 impl LocalMaps {
-    pub fn new() -> Self {
-        let mut file_path = get_config_path();
+    pub fn new(config_dir: PathBuf) -> Self {
+        let mut file_path = config_dir;
         file_path.push(LOCAL_MAPS_FILE_NAME);
         debug!("Local file path: {:?}", file_path);
         let maps = read_or_initialize(file_path, "local maps");
@@ -80,8 +114,8 @@ impl LocalMaps {
         self.maps.iter().any(|map| map.id() == id)
     }
 
-    pub fn write_to_file(&self) {
-        let mut file_path = get_config_path();
+    pub fn write_to_file(&self, config_dir: PathBuf) {
+        let mut file_path = config_dir;
         file_path.push(LOCAL_MAPS_FILE_NAME);
         write_to_file(file_path, self, "local maps");
     }

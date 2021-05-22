@@ -45,6 +45,7 @@ pub fn connect_selection_change(gui_data: &GuiData, tree_view: &gtk::TreeView) {
                     .clone();
                 let is_local = shared_install_state.borrow().is_map_installed(&id_string);
                 let is_offline = *shared_config_state.borrow().is_offline();
+                let image_dir = shared_config_state.borrow().image_cache_dir().clone();
                 detail_pane.update(&file, is_local, is_offline);
                 let sender = sender.clone();
                 thread::Builder::new()
@@ -52,7 +53,7 @@ pub fn connect_selection_change(gui_data: &GuiData, tree_view: &gtk::TreeView) {
                     .spawn(move || {
                         THREAD_COUNTER.fetch_add(1, Ordering::Relaxed);
                         let mut image_loader = ImageLoader::new(id_string, path_string);
-                        image_loader.load_map_image(is_offline);
+                        image_loader.load_map_image(is_offline, image_dir);
                         match sender.send(image_loader) {
                             Ok(_) => (),
                             Err(e) => {

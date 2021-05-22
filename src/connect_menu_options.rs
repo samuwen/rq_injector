@@ -1,7 +1,6 @@
 use crate::gui_data::GuiData;
 use crate::list_view::populate_list_view;
 use crate::request_utils::get_database_from_remote;
-use crate::utils::get_config_path;
 use glib::{Continue, MainContext, Receiver, Sender, PRIORITY_DEFAULT};
 use gtk::prelude::*;
 use gtk::AccelGroup;
@@ -28,7 +27,8 @@ pub fn connect_close(gui_data: &GuiData) {
     let shared_config_state = gui_data.shared_config_state.clone();
     window.connect_destroy(move |_| {
         info!("Destroying window");
-        shared_install_state.borrow().write_to_file();
+        let config_dir = shared_config_state.borrow().config_dir().clone();
+        shared_install_state.borrow().write_to_file(config_dir);
         shared_config_state.borrow().write_to_file();
     });
 }
@@ -37,14 +37,17 @@ pub fn connect_reload(gui_data: &GuiData) {
     trace!("Initializing reload connection");
     let menu_reload = gui_data.main_menu.menu_reload.clone();
     let gui_data = gui_data.clone();
+    let shared_configs = gui_data.shared_config_state.clone();
     menu_reload.connect_activate(move |_| {
         info!("Database reload request made");
+        let mut config_dir = shared_configs.borrow().config_dir().clone();
+        config_dir.push("database.xml");
         let (sender, receiver): (Sender<bool>, Receiver<bool>) =
             MainContext::channel(PRIORITY_DEFAULT);
         thread::Builder::new()
             .name("Reload-0".to_string())
             .spawn(move || {
-                get_database_from_remote();
+                get_database_from_remote(config_dir);
                 sender.send(true).expect("Failed to send");
             })
             .expect("Failed to spawn thread");
@@ -106,7 +109,9 @@ pub fn connect_cache_clear_ok(gui_data: &GuiData) {
     trace!("Initializing cache clear ok button");
     let btn_confirm_cache_clear = gui_data.clear_cache_dialog.btn_confirm_clear_cache.clone();
     let clear_cache_dialog = gui_data.clear_cache_dialog.dlg_you_sure.clone();
-    let config_dir = get_config_path();
+    let shared_config = gui_data.shared_config_state.clone();
+    let config_dir = shared_config.borrow().config_dir().clone();
+    let image_cache_dir = shared_config.borrow().image_cache_dir().clone();
     btn_confirm_cache_clear.connect_clicked(move |_| {
         info!("Clear cache ok button pressed");
         debug!("{:?}", config_dir);
@@ -114,9 +119,7 @@ pub fn connect_cache_clear_ok(gui_data: &GuiData) {
         remove_file_with_name(&config_dir, "config.xml");
         remove_file_with_name(&config_dir, "database.xml");
         remove_file_with_name(&config_dir, "installedMaps.xml");
-        let mut images = config_dir.clone();
-        images.push("images");
-        match remove_dir_all(&images) {
+        match remove_dir_all(&image_cache_dir) {
             Ok(_) => debug!("Removed images directory"),
             Err(e) => error!("Error removing images directory: {}", e),
         };

@@ -19,13 +19,12 @@ mod main_menu;
 mod output_dialog;
 mod quake_file;
 mod request_utils;
-mod utils;
 
+use dirs::config_dir;
 use flexi_logger::{LevelFilter, LogSpecBuilder, Logger};
 use initialize_gui::initialize_gui;
 use log::*;
 use std::path::PathBuf;
-use utils::*;
 
 fn main() {
     let mut log_builder = LogSpecBuilder::new();
@@ -47,7 +46,7 @@ fn main() {
 
 fn initialize_application() {
     trace!("Starting application");
-    let base_config_dir = get_config_path();
+    let base_config_dir = config_dir().expect("No config dir found");
     match std::fs::create_dir(&base_config_dir) {
         Ok(_) => trace!("Made base config directory"),
         Err(_) => trace!("Base config directory exists"),

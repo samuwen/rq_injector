@@ -83,10 +83,12 @@ pub fn populate_list_view(gui_data: &GuiData) {
         MainContext::channel(PRIORITY_DEFAULT);
     let rec_gui_data = gui_data.clone();
     let list_view = gui_data.list_view.clone();
+    let shared_configs = gui_data.shared_config_state.clone();
+    let config_dir = shared_configs.borrow().config_dir().clone();
     thread::Builder::new()
         .name("List-0".to_string())
         .spawn(move || {
-            let files = initialize_data();
+            let files = initialize_data(config_dir);
             sender.send(files).expect("Failed to send");
         })
         .expect("Failed to spawn thread");

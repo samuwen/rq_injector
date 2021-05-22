@@ -1,20 +1,18 @@
-use crate::utils::get_config_path;
 use bytes::Bytes;
 use log::*;
 use reqwest::blocking::{ClientBuilder, Response};
 use std::fmt::Debug;
 use std::fs::{write, File};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-pub fn get_database_from_remote() -> File {
+pub fn get_database_from_remote(file_path: PathBuf) -> File {
     debug!("Getting database from remote");
-    let mut file_path = get_config_path();
-    file_path.push("database.xml");
     let url = "https://www.quaddicted.com/reviews/quaddicted_database.xml".to_string();
     if let Some(bytes) = handle_basic_request(url) {
         write_file(&file_path, bytes);
         return File::open(file_path).unwrap();
     };
+    // TODO: Fix
     panic!("Couldn't parse database!!")
 }
 

@@ -1,22 +1,22 @@
 use crate::request_utils::get_database_from_remote;
-use crate::utils::*;
 use getset::Getters;
 use log::*;
 use quick_xml::de::{from_reader, DeError};
 use serde::Deserialize;
 use std::fs::File;
 use std::io::{BufReader, Read};
+use std::path::PathBuf;
 
-pub fn initialize_data() -> Files {
+pub fn initialize_data(config_dir: PathBuf) -> Files {
     trace!("Initializing data");
-    let mut file_path = get_config_path();
+    let mut file_path = config_dir;
     file_path.push("database.xml");
     let file = match File::open(&file_path) {
         Ok(f) => {
             debug!("Local database found. Using");
             f
         }
-        Err(_) => get_database_from_remote(),
+        Err(_) => get_database_from_remote(file_path),
     };
     let reader = BufReader::new(file);
     read_datastore(reader)

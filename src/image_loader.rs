@@ -1,5 +1,4 @@
 use crate::request_utils::get_image_from_remote;
-use crate::utils::*;
 use getset::Getters;
 use log::*;
 use std::fs::File;
@@ -22,9 +21,8 @@ impl ImageLoader {
         }
     }
 
-    pub fn load_map_image(&mut self, is_offline: bool) {
-        let mut path = get_config_path();
-        path.push("images");
+    pub fn load_map_image(&mut self, is_offline: bool, mut image_path: PathBuf) {
+        let mut path = image_path.clone();
         path.push(format!("{}.jpg", self.map_id));
         self.path = path;
         info!("Attempting to load image at: {:?}", self.path);
@@ -35,10 +33,8 @@ impl ImageLoader {
                 get_image_from_remote(&self.map_id, &self.path);
             } else {
                 debug!("We're offline, set path to not found image");
-                let mut path = PathBuf::new();
-                path.push("resources");
-                path.push("not_found.png");
-                self.path = path;
+                image_path.push("not_found.png");
+                self.path = image_path;
             }
         }
     }
