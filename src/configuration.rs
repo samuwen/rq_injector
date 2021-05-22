@@ -1,3 +1,4 @@
+use crate::locales::{init_locale, Locale, LocaleChoice, Nester};
 use derive_builder::Builder;
 use dirs::config_dir;
 use getset::{Getters, Setters};
@@ -28,15 +29,27 @@ pub struct Configuration {
     config_dir: PathBuf,
     image_cache_dir: PathBuf,
     image_resources_dir: PathBuf,
-    locale_resources_dir: PathBuf,
+    current_locale_choice: Nester,
+    #[serde(skip)] // don't store this in the file. Makes the file hard to read.
+    current_locale: Locale,
 }
 
 impl Configuration {
     pub fn new() -> Self {
         let mut file_path = config_dir().expect("No config dir found");
+        file_path.push("QInjector");
         file_path.push(CONFIG_FILE_NAME);
-        let config = read_or_initialize(file_path, "config");
-        trace!("{:?}", config);
+        let mut config: Self = read_or_initialize(file_path, "config");
+        trace!("Config object: {:?}", config);
+        let mut locale_resources_dir = std::env::current_dir().expect("No current dir found");
+        locale_resources_dir.push("resources");
+        locale_resources_dir.push("locales");
+        let locale = init_locale(
+            locale_resources_dir.clone(),
+            config.current_locale_choice.get_choice(),
+        );
+        trace!("Locale object: {:?}", locale);
+        config.current_locale = locale;
         config
     }
 
@@ -59,6 +72,7 @@ impl Default for Configuration {
         let mut locale_resources_dir = std::env::current_dir().expect("No current dir found");
         locale_resources_dir.push("resources");
         locale_resources_dir.push("locales");
+        let locale = init_locale(locale_resources_dir, LocaleChoice::EnUs.get_name());
         Self {
             quake_dir: Default::default(),
             quake_exe: Default::default(),
@@ -69,7 +83,8 @@ impl Default for Configuration {
             config_dir,
             image_cache_dir,
             image_resources_dir,
-            locale_resources_dir,
+            current_locale_choice: Nester::NestedEnum(LocaleChoice::EnUs),
+            current_locale: locale,
         }
     }
 }
@@ -156,8 +171,9 @@ fn read_or_initialize<T: DeserializeOwned + Default>(path: impl AsRef<Path>, nam
                 }
             }
         }
-        Err(_) => {
+        Err(e) => {
             info!("{} file not found. Generating default", name);
+            trace!("Error message: {}", e);
             T::default()
         }
     }

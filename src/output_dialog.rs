@@ -1,3 +1,5 @@
+use crate::initializable::Initializable;
+use crate::locales::Locale;
 use gtk::prelude::*;
 use gtk::{Builder, Button, Dialog, TextView};
 
@@ -24,5 +26,12 @@ impl OutputDialog {
             btn_ok,
             txt_output,
         }
+    }
+}
+
+impl Initializable for OutputDialog {
+    fn init_text(&self, locale: &Locale) {
+        self.btn_ok.set_label(locale.universal_ok_button());
+        self.dlg_output.set_title(locale.output_dialog_title());
     }
 }

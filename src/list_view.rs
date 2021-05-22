@@ -37,7 +37,7 @@ impl ListView {
         }
     }
 
-    pub fn initialize(&self) {
+    pub fn initialize(&self, gui_data: &GuiData) {
         let released_index = gtk::SortColumn::Index(Columns::Released as u32);
         self.list_store.set_sort_func(released_index, date_sort_fn);
         let rating_index = gtk::SortColumn::Index(Columns::Rating as u32);
@@ -45,7 +45,7 @@ impl ListView {
         self.tree_view
             .get_selection()
             .set_mode(gtk::SelectionMode::Single);
-        create_tree_view_columns(&self.tree_view);
+        create_tree_view_columns(&self.tree_view, gui_data);
         self.tree_view.set_vexpand(true);
         self.sw_list.add(&self.tree_view);
         self.sw_list.show_all();
@@ -102,7 +102,7 @@ pub fn populate_list_view(gui_data: &GuiData) {
     });
 }
 
-fn create_tree_view_columns(tree_view: &gtk::TreeView) {
+fn create_tree_view_columns(tree_view: &gtk::TreeView, gui_data: &GuiData) {
     let renderer = gtk::CellRendererToggle::new();
     let installed_column = gtk::TreeViewColumn::new();
     installed_column.pack_start(&renderer, true);
@@ -110,12 +110,35 @@ fn create_tree_view_columns(tree_view: &gtk::TreeView) {
     installed_column.add_attribute(&renderer, "active", Columns::Installed as i32);
     installed_column.set_sort_column_id(Columns::Installed as i32);
 
+    let config = gui_data.shared_config_state.clone();
+
     let renderer = gtk::CellRendererText::new();
-    let id_column = create_text_column("Id", &renderer, Columns::Name);
-    let title_column = create_text_column("Title", &renderer, Columns::Title);
-    let author_column = create_text_column("Author", &renderer, Columns::Author);
-    let released_column = create_text_column("Released", &renderer, Columns::Released);
-    let rating_column = create_rating_column();
+    let id_column = create_text_column(
+        config.borrow().current_locale().id_column_name(),
+        &renderer,
+        Columns::Name,
+    );
+    let title_column = create_text_column(
+        config.borrow().current_locale().title_column_name(),
+        &renderer,
+        Columns::Title,
+    );
+    let author_column = create_text_column(
+        config.borrow().current_locale().author_column_name(),
+        &renderer,
+        Columns::Author,
+    );
+    let released_column = create_text_column(
+        config.borrow().current_locale().released_column_name(),
+        &renderer,
+        Columns::Released,
+    );
+    let title = config
+        .borrow()
+        .current_locale()
+        .rating_column_name()
+        .to_owned();
+    let rating_column = create_rating_column(title);
 
     tree_view.append_column(&installed_column);
     tree_view.append_column(&id_column);
@@ -148,11 +171,12 @@ fn create_text_column(
     column
 }
 
-fn create_rating_column() -> gtk::TreeViewColumn {
+fn create_rating_column(title: String) -> gtk::TreeViewColumn {
     let col_int = Columns::Rating as i32;
     let renderer = gtk::CellRendererPixbuf::new();
     let column = gtk::TreeViewColumnBuilder::new()
         .max_width(200)
+        .title(&title)
         .clickable(true)
         .sort_column_id(col_int)
         .expand(true)

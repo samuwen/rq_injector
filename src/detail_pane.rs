@@ -1,3 +1,5 @@
+use crate::initializable::Initializable;
+use crate::locales::Locale;
 use crate::quake_file::QuakeFile;
 use chrono::NaiveDate;
 use gdk_pixbuf::{Pixbuf, PixbufAnimation};
@@ -120,6 +122,14 @@ impl DetailPane {
     pub fn update_image(&self, pixbuf: Pixbuf) {
         self.img_current_map.set_from_pixbuf(Some(&pixbuf));
         self.img_current_map.set_visible(true);
+    }
+}
+
+impl Initializable for DetailPane {
+    fn init_text(&self, locale: &Locale) {
+        self.btn_install.set_label(locale.install_button_text());
+        self.btn_uninstall.set_label(locale.uninstall_button_text());
+        self.btn_play.set_label(locale.play_button_text());
     }
 }
 

@@ -1,3 +1,5 @@
+use crate::initializable::Initializable;
+use crate::locales::Locale;
 use gtk::prelude::*;
 use gtk::{Builder, Button, Entry};
 
@@ -24,5 +26,16 @@ impl FilterBar {
             btn_clear_filter,
             btn_install_random,
         }
+    }
+}
+
+impl Initializable for FilterBar {
+    fn init_text(&self, locale: &Locale) {
+        self.btn_clear_filter
+            .set_label(locale.clear_filter_text_button());
+        self.btn_install_random
+            .set_label(locale.install_random_map_button());
+        self.entry_filter_text
+            .set_placeholder_text(Some(locale.filter_text_placeholder()));
     }
 }
