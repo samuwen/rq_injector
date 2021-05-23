@@ -73,10 +73,23 @@ impl Default for Configuration {
         locale_resources_dir.push("resources");
         locale_resources_dir.push("locales");
         let locale = init_locale(locale_resources_dir, LocaleChoice::EnUs.get_name());
+        // real tired of selecting these through the GUI haha
+        let quake_dir = match cfg!(debug_assertions) {
+            true => "/home/samuwen/.steam/debian-installation/steamapps/common/Quake".to_string(),
+            false => Default::default(),
+        };
+        let quake_exe = match cfg!(debug_assertions) {
+            true => "/usr/games/quakespasm".to_string(),
+            false => Default::default(),
+        };
+        let download_dir = match cfg!(debug_assertions) {
+            true => "/home/samuwen/Downloads".to_string(),
+            false => Default::default(),
+        };
         Self {
-            quake_dir: Default::default(),
-            quake_exe: Default::default(),
-            download_dir: Default::default(),
+            quake_dir,
+            quake_exe,
+            download_dir,
             rogue_installed: Default::default(),
             hip_installed: Default::default(),
             is_offline: Default::default(),

@@ -28,7 +28,7 @@ impl Nester {
     pub fn get_choice(&self) -> String {
         match self {
             // this should never get deserialized
-            Nester::NestedEnum(_) => panic!("you shouldn't have come here"),
+            Nester::NestedEnum(choice) => choice.get_name(),
             // we serialize to this, so this gets us the string value
             Nester::Other(s) => s.to_owned(),
         }

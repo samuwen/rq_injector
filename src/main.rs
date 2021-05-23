@@ -48,7 +48,8 @@ fn main() {
 
 fn initialize_application() {
     trace!("Starting application");
-    let base_config_dir = config_dir().expect("No config dir found");
+    let mut base_config_dir = config_dir().expect("No config dir found");
+    base_config_dir.push("QInjector");
     match std::fs::create_dir(&base_config_dir) {
         Ok(_) => trace!("Made base config directory"),
         Err(_) => trace!("Base config directory exists"),

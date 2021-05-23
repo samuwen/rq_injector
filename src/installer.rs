@@ -2,7 +2,7 @@ use crate::configuration::*;
 use crate::request_utils::get_map_from_remote;
 use getset::Getters;
 use log::*;
-use std::fs::{remove_file, File};
+use std::fs::{create_dir, read_dir, remove_file, File};
 use std::io::BufReader;
 use zip::ZipArchive;
 
@@ -69,7 +69,12 @@ impl Installer {
 
     pub fn install_map(&mut self, map_id: String) {
         trace!("Started installing: {}", map_id);
-        get_map_from_remote(&map_id, &self.download_dir);
+        if !self.is_map_zip_downloaded(&map_id) {
+            debug!("Zip not found. Grabbing from remote");
+            get_map_from_remote(&map_id, &self.download_dir);
+        } else {
+            debug!("Local file found. Stop all the downloading");
+        }
         self.unpack_zip_to_dir(&map_id);
         trace!("Done installing: {}", map_id);
     }
@@ -89,29 +94,43 @@ impl Installer {
         trace!("Done uninstalling: {}", self.map_id);
     }
 
+    fn is_map_zip_downloaded(&self, map_id: &String) -> bool {
+        info!("Checking download dir for file: {:?}", self.download_dir);
+        let mut entries = read_dir(self.download_dir.to_string()).expect("reading dir failed");
+        entries.any(|entry| {
+            let e = match entry {
+                Ok(e) => e,
+                Err(e) => panic!("{}", e),
+            };
+            let zip_name = format!("{}.zip", map_id);
+            e.file_name() == std::ffi::OsString::from(zip_name)
+        })
+    }
+
     fn unpack_zip_to_dir(&mut self, map_id: &String) {
         let mut archive = self.get_zip_archive(map_id);
-        let mut files = vec![];
-        for i in 0..archive.len() {
-            let mut file = archive.by_index(i).unwrap();
-            let name = file.name().to_ascii_lowercase();
-            debug!("Extracting: {}", name);
-            files.push(
-                FileInfoBuilder::default()
-                    .crc(file.crc32())
-                    .name(name.to_owned())
-                    .build()
-                    .unwrap(),
-            );
-            let file_path = format!("{}/id1/maps/{}", self.quake_dir, name);
-            debug!("Writing out to local file: {}", file_path);
-            let mut local_file = File::create(&file_path).unwrap();
-            std::io::copy(&mut file, &mut local_file).expect("Couldn't copy zip file to disk");
-            trace!("Successfully wrote {} to disk", name);
+        let has_extra_dirs = archive.file_names().any(|name| name.contains("/"));
+        match has_extra_dirs {
+            true => {
+                debug!("We have extra directories, lets create those");
+                let root_dir_name = format!("{}/{}", self.quake_dir, &map_id);
+                create_dir(&root_dir_name).expect("Quake dir probably not set");
+                match archive.extract(&root_dir_name) {
+                    Ok(_) => debug!("Extraction went well"),
+                    Err(e) => error!("Failed to extract zip: {}", e),
+                };
+            }
+            false => {
+                debug!("No extra directories, can go straight to maps");
+                let target_directory = format!("{}/id1/maps/", self.quake_dir);
+                match archive.extract(&target_directory) {
+                    Ok(_) => debug!("Extraction went well"),
+                    Err(e) => error!("Failed to extract zip: {}", e),
+                };
+            }
         }
         let map_pack = MapPackBuilder::default()
             .id(map_id.to_owned())
-            .files(files)
             .build()
             .unwrap();
         self.installed_map_pack = Some(map_pack);

@@ -9,6 +9,7 @@ pub fn get_database_from_remote(file_path: PathBuf) -> File {
     debug!("Getting database from remote");
     let url = "https://www.quaddicted.com/reviews/quaddicted_database.xml".to_string();
     if let Some(bytes) = handle_basic_request(url) {
+        debug!("Database file path: {:?}", file_path);
         write_file(&file_path, bytes);
         return File::open(file_path).unwrap();
     };

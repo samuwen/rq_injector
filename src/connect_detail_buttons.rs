@@ -29,7 +29,6 @@ pub fn connect_install_map(gui_data: &GuiData) {
 
     button.connect_clicked(move |_| {
         trace!("Install button clicked");
-        // TODO - look for map in download dir and bypass pinging remote
         let map_id = get_selected_map_id(&con_gui_data);
         let path_string = get_current_path_string(&con_gui_data);
         let download_dir = shared_config_state.borrow().download_dir().to_owned();
