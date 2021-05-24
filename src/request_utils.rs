@@ -1,20 +1,16 @@
-use bytes::Bytes;
 use log::*;
-use reqwest::blocking::{ClientBuilder, Response};
+use reqwest::blocking::*;
 use std::fmt::Debug;
-use std::fs::{write, File};
+use std::fs::File;
+use std::io::{BufRead, BufReader, Cursor, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
 pub fn get_database_from_remote(file_path: PathBuf) -> File {
     debug!("Getting database from remote");
     let url = "https://www.quaddicted.com/reviews/quaddicted_database.xml".to_string();
-    if let Some(bytes) = handle_basic_request(url) {
-        debug!("Database file path: {:?}", file_path);
-        write_file(&file_path, bytes);
-        return File::open(file_path).unwrap();
-    };
-    // TODO: Fix
-    panic!("Couldn't parse database!!")
+    debug!("Database file path: {:?}", file_path);
+    get_remote_file_and_write_to_path(url, &file_path);
+    return File::open(&file_path).unwrap();
 }
 
 pub fn get_map_from_remote(map_id: &String, download_dir: &String) {
@@ -22,9 +18,7 @@ pub fn get_map_from_remote(map_id: &String, download_dir: &String) {
     let url = format!("https://www.quaddicted.com/filebase/{}.zip", map_id);
     debug!("Getting map from url: {}", url);
     let path = format!("{}/{}.zip", download_dir, map_id);
-    if let Some(bytes) = handle_basic_request(url) {
-        write_file(&path, bytes);
-    }
+    get_remote_file_and_write_to_path(url, &path);
 }
 
 pub fn get_image_from_remote<P: AsRef<Path> + Debug>(map_id: &String, path: P) {
@@ -34,48 +28,46 @@ pub fn get_image_from_remote<P: AsRef<Path> + Debug>(map_id: &String, path: P) {
         map_id
     );
     debug!("Getting image from url: {}", url);
-    if let Some(bytes) = handle_basic_request(url) {
-        write_file(&path, bytes);
-    }
+    get_remote_file_and_write_to_path(url, &path);
 }
 
-fn write_file<P: AsRef<Path> + Debug>(path: P, bytes: Bytes) {
-    match write(&path, bytes) {
-        Ok(_) => {
-            debug!("Wrote file to {:?}", path);
-        }
-        Err(e) => {
-            error!("Error: {}", e);
-        }
-    };
-}
+fn get_remote_file_and_write_to_path<P: AsRef<Path> + Debug>(
+    url: String,
+    path: P,
+) -> Result<(), reqwest::Error> {
+    let mut response = get(&url)?;
+    let content_length = response.content_length().unwrap();
 
-fn handle_basic_request(url: String) -> Option<Bytes> {
-    let client = ClientBuilder::new()
-        .timeout(std::time::Duration::from_secs(60))
-        .build()
-        .unwrap();
-    let response_res = client.get(url).send();
-    parse_bytes_from_response(response_res)
-}
-
-fn parse_bytes_from_response(response_result: reqwest::Result<Response>) -> Option<Bytes> {
-    match response_result {
-        Ok(res) => match res.bytes() {
+    let mut out_bytes = vec![0; content_length as usize];
+    let mut in_bytes = vec![0; 0x4000];
+    let mut total = 0;
+    'byte_reader: loop {
+        match response.read(&mut in_bytes) {
             Ok(b) => {
-                debug!("Got file bytes successfully");
-                Some(b)
+                if total != 0 {
+                    debug!(
+                        "progress: {:.2}%",
+                        (total as f64 / content_length as f64) * 100.0
+                    );
+                } else {
+                    debug!("progress: 0%");
+                }
+                out_bytes
+                    .write_all(&in_bytes.as_slice()[0..b])
+                    .expect("fail");
+                total += b;
+                if total == content_length as usize {
+                    break 'byte_reader;
+                }
             }
             Err(e) => {
-                error!("Couldn't parse file bytes: {}", e);
-                println!("File on server is invalid. Try another file");
-                None
+                error!("Failed to stream data: {}", e);
             }
-        },
-        Err(e) => {
-            error!("Couldn't get data from remote: {}", e);
-            println!("Couldn't talk to remote server. Are you connected to the internet?");
-            None
         }
     }
+
+    let mut file = File::create(&path).expect("Couldn't create file");
+    file.write(&out_bytes)
+        .expect("Couldn't write chunk for some reason");
+    Ok(())
 }

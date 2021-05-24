@@ -126,9 +126,9 @@ pub fn connect_play_button(gui_data: &GuiData) {
             Some(iter) => {
                 let string_res: Result<Option<String>, glib::value::GetError> =
                     model.get_value(&iter, 0).get();
-                string_res.unwrap().unwrap()
+                Some(string_res.unwrap().unwrap())
             }
-            None => "start".to_string(),
+            None => None,
         };
         let map_id = get_selected_map_id(&gui_data);
         let quake_exe = shared_config_state.borrow().quake_exe().to_owned();
@@ -208,9 +208,11 @@ fn get_current_path_string(gui_data: &GuiData) -> String {
 fn get_thread_name(name: &str) -> String {
     let name = format!("{}-{}", name, THREAD_COUNTER.load(Ordering::Relaxed));
     THREAD_COUNTER.fetch_add(1, Ordering::Relaxed);
+    trace!("Thread counter: {:?}", THREAD_COUNTER);
     name
 }
 
 fn release_thread_name() {
     THREAD_COUNTER.fetch_sub(1, Ordering::Relaxed);
+    trace!("Thread counter: {:?}", THREAD_COUNTER);
 }

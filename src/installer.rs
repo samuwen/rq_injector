@@ -2,8 +2,8 @@ use crate::configuration::*;
 use crate::request_utils::get_map_from_remote;
 use getset::Getters;
 use log::*;
-use std::fs::{create_dir, read_dir, remove_file, File};
-use std::io::BufReader;
+use std::fs::{create_dir, create_dir_all, read_dir, remove_file, File};
+use std::io::{BufReader, Write};
 use zip::ZipArchive;
 
 #[derive(Clone, Getters)]
@@ -121,16 +121,37 @@ impl Installer {
                 };
             }
             false => {
-                debug!("No extra directories, can go straight to maps");
-                let target_directory = format!("{}/id1/maps/", self.quake_dir);
-                match archive.extract(&target_directory) {
-                    Ok(_) => debug!("Extraction went well"),
-                    Err(e) => error!("Failed to extract zip: {}", e),
-                };
+                debug!("No extra directories, creating extra dir structure");
+                let root_dir_name = format!("{}/{}", self.quake_dir, &map_id);
+                let map_dir_name = format!("{}/maps", &root_dir_name);
+                create_dir_all(&map_dir_name).expect("Quake dir probably not set");
+                let mut bsp_name = String::from("start");
+                for i in 0..archive.len() {
+                    let mut file = archive.by_index(i).unwrap();
+                    let name = file.name().to_ascii_lowercase();
+                    debug!("Extracting: {}", name);
+                    let file_path = match name.contains("bsp") {
+                        true => {
+                            // get the root file name minus .bsp
+                            bsp_name = name.split(".").next().unwrap().to_string();
+                            format!("{}/{}", &map_dir_name, &name)
+                        }
+                        false => format!("{}/{}", &root_dir_name, &name),
+                    };
+                    debug!("Writing out to local file: {}", file_path);
+                    let mut local_file = File::create(&file_path).unwrap();
+                    std::io::copy(&mut file, &mut local_file)
+                        .expect("Couldn't copy zip file to disk");
+                    trace!("Successfully wrote {} to disk", name);
+                }
+                let auto_file_path = format!("{}/autoexec.cfg", &root_dir_name);
+                let mut f = File::create(&auto_file_path).expect("Couldn't create autoexec file");
+                write!(f, "map {}", bsp_name).expect("Couldn't write auto file");
             }
         }
         let map_pack = MapPackBuilder::default()
             .id(map_id.to_owned())
+            .files(Vec::new())
             .build()
             .unwrap();
         self.installed_map_pack = Some(map_pack);

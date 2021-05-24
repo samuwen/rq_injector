@@ -30,7 +30,7 @@ use std::path::PathBuf;
 
 fn main() {
     let mut log_builder = LogSpecBuilder::new();
-    log_builder.default(LevelFilter::Trace);
+    log_builder.default(LevelFilter::Debug);
     log_builder.module("reqwest", LevelFilter::Debug);
     log_builder.module("mio", LevelFilter::Warn); // used by reqwest
     log_builder.module("want", LevelFilter::Warn); // used by reqwest
