@@ -109,6 +109,7 @@ pub fn connect_clear_cache_ok(gui_data: &GuiData) {
     let shared_config = gui_data.shared_config_state.clone();
     let config_dir = shared_config.borrow().config_dir().clone();
     let image_cache_dir = shared_config.borrow().image_cache_dir().clone();
+    let logs_dir = shared_config.borrow().logs_dir().clone();
     btn_confirm_cache_clear.connect_clicked(move |_| {
         info!("Clear cache ok button pressed");
         debug!("{:?}", config_dir);
@@ -119,6 +120,10 @@ pub fn connect_clear_cache_ok(gui_data: &GuiData) {
         match remove_dir_all(&image_cache_dir) {
             Ok(_) => debug!("Removed images directory"),
             Err(e) => error!("Error removing images directory: {}", e),
+        };
+        match remove_dir_all(&logs_dir) {
+            Ok(_) => debug!("Removed logs directory"),
+            Err(e) => error!("Error removing logs directory: {}", e),
         };
         match remove_dir(&config_dir) {
             Ok(_) => debug!("Removed cache directory"),

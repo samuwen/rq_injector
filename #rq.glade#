@@ -876,7 +876,17 @@
                     <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
-                      <placeholder/>
+                      <object class="GtkProgressBar">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="text" translatable="yes">Jank</property>
+                        <property name="show_text">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
                     </child>
                   </object>
                   <packing>

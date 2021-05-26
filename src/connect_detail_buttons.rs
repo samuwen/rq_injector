@@ -1,3 +1,4 @@
+use crate::download_progress::DownloadProgress;
 use crate::game_player::*;
 use crate::gui_data::GuiData;
 use crate::installer::Installer;
@@ -14,7 +15,12 @@ static THREAD_COUNTER: AtomicU8 = AtomicU8::new(0);
 pub fn connect_install_map(gui_data: &GuiData) {
     let (sender, receiver): (Sender<Installer>, Receiver<Installer>) =
         MainContext::channel(PRIORITY_DEFAULT);
+    let (progress_sender, progress_receiver): (
+        Sender<DownloadProgress>,
+        Receiver<DownloadProgress>,
+    ) = MainContext::channel(PRIORITY_DEFAULT);
     let button = gui_data.detail_pane.btn_install.clone();
+    let detail_pane = gui_data.detail_pane.clone();
     let rec_gui_data = gui_data.clone();
     let shared_install_state = rec_gui_data.shared_install_state.clone();
     let shared_config_state = rec_gui_data.shared_config_state.clone();
@@ -25,6 +31,11 @@ pub fn connect_install_map(gui_data: &GuiData) {
         shared_install_state.borrow_mut().add_map(map_pack);
         Continue(true)
     });
+    let rec_detail_pane = detail_pane.clone();
+    progress_receiver.attach(None, move |dl_progress| {
+        rec_detail_pane.update_progress_bar(&dl_progress.file_name(), *dl_progress.percent());
+        Continue(true)
+    });
     let con_gui_data = gui_data.clone();
 
     button.connect_clicked(move |_| {
@@ -33,7 +44,10 @@ pub fn connect_install_map(gui_data: &GuiData) {
         let path_string = get_current_path_string(&con_gui_data);
         let download_dir = shared_config_state.borrow().download_dir().to_owned();
         let quake_dir = shared_config_state.borrow().quake_dir().to_owned();
+        let mut detail_pane = detail_pane.clone();
+        detail_pane.add_progress_bar(&map_id);
         let sender = sender.clone();
+        let progress_sender = progress_sender.clone();
         let thread_name = get_thread_name("install");
         thread::Builder::new()
             .name(thread_name)
@@ -42,7 +56,7 @@ pub fn connect_install_map(gui_data: &GuiData) {
                     .with_download_dir(download_dir)
                     .with_quake_dir(quake_dir)
                     .with_path_string(path_string);
-                installer.install_map(map_id);
+                installer.install_map(progress_sender);
                 sender.send(installer).expect("Couldn't send");
             })
             .expect("Failed to spawn install thread");
@@ -70,12 +84,6 @@ pub fn connect_uninstall_map(gui_data: &GuiData) {
         trace!("Uninstall button clicked");
         let map_id = get_selected_map_id(&con_gui_data);
         let path_string = get_current_path_string(&con_gui_data);
-        let files = shared_install_state
-            .borrow()
-            .get_map_by_id(&map_id)
-            .unwrap()
-            .files()
-            .to_owned();
         let download_dir = shared_config_state.borrow().download_dir().to_owned();
         let quake_dir = shared_config_state.borrow().quake_dir().to_owned();
 
@@ -84,13 +92,12 @@ pub fn connect_uninstall_map(gui_data: &GuiData) {
         thread::Builder::new()
             .name(thread_name)
             .spawn(move || {
-                let mut installer = Installer::new()
+                let installer = Installer::new()
                     .with_download_dir(download_dir)
                     .with_quake_dir(quake_dir)
                     .with_path_string(path_string)
                     .with_map_id(map_id);
-                installer.uninstall_map(files);
-                thread::sleep(std::time::Duration::from_secs(10));
+                installer.uninstall_map();
                 sender.send(installer).expect("Couldn't send");
             })
             .expect("Failed to spawn install thread");

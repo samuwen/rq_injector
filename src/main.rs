@@ -8,6 +8,7 @@ mod connect_output_dialog;
 mod connect_search_event;
 mod connect_selection_change;
 mod detail_pane;
+mod download_progress;
 mod filter_bar;
 mod game_player;
 mod gui_data;
@@ -19,11 +20,12 @@ mod list_view;
 mod locales;
 mod main_menu;
 mod output_dialog;
+mod progress_dialog;
 mod quake_file;
 mod request_utils;
 
 use dirs::config_dir;
-use flexi_logger::{LevelFilter, LogSpecBuilder, Logger};
+use flexi_logger::{Age, Cleanup, Criterion, LevelFilter, LogSpecBuilder, Logger, Naming};
 use initialize_gui::initialize_gui;
 use log::*;
 use std::path::PathBuf;
@@ -34,10 +36,20 @@ fn main() {
     log_builder.module("reqwest", LevelFilter::Debug);
     log_builder.module("mio", LevelFilter::Warn); // used by reqwest
     log_builder.module("want", LevelFilter::Warn); // used by reqwest
+    let mut log_dir = config_dir().expect("No config dir found");
+    log_dir.push("QInjector");
+    log_dir.push("logs");
 
     Logger::with(log_builder.build())
         .duplicate_to_stdout(flexi_logger::Duplicate::All)
+        .log_to_file()
         .format(flexi_logger::colored_with_thread)
+        .o_directory(Some(log_dir))
+        .rotate(
+            Criterion::Age(Age::Day),
+            Naming::Numbers,
+            Cleanup::KeepLogFiles(5),
+        )
         .set_palette("196;208;-;7;10".to_string())
         .start()
         .unwrap_or_else(|e| panic!("Logger initialization failed with {}", e));
@@ -54,15 +66,16 @@ fn initialize_application() {
         Ok(_) => trace!("Made base config directory"),
         Err(_) => trace!("Base config directory exists"),
     }
-    init_images_dir(base_config_dir);
+    init_dir_by_name(&mut base_config_dir, "images");
+    init_dir_by_name(&mut base_config_dir, "logs");
 
     initialize_gui();
 }
 
-fn init_images_dir(mut config_dir: PathBuf) {
-    config_dir.push("images");
+fn init_dir_by_name(config_dir: &mut PathBuf, name: &str) {
+    config_dir.push(name);
     match std::fs::create_dir(config_dir) {
-        Ok(_) => trace!("Made images directory"),
-        Err(_) => trace!("images directory exists"),
+        Ok(_) => trace!("Made {} directory", name),
+        Err(_) => trace!("{} directory exists", name),
     }
 }

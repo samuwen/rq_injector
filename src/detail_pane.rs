@@ -4,8 +4,10 @@ use crate::quake_file::QuakeFile;
 use chrono::NaiveDate;
 use gdk_pixbuf::{Pixbuf, PixbufAnimation};
 use gtk::prelude::*;
-use gtk::{Builder, Button, ComboBoxText, Image, Label, ScrolledWindow};
+use gtk::{Builder, Button, ComboBoxText, Image, Label, ProgressBar, ScrolledWindow};
 use log::*;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct DetailPane {
@@ -18,7 +20,9 @@ pub struct DetailPane {
     pub lbl_date: Label,
     pub lbl_size: Label,
     pub sw_details: ScrolledWindow,
+    pub box_progress: gtk::Box,
     pub dropdown: ComboBoxText,
+    progress_bars: Rc<RefCell<Vec<ProgressBar>>>,
 }
 
 impl DetailPane {
@@ -51,6 +55,9 @@ impl DetailPane {
         let lbl_size: Label = builder
             .get_object("lbl_size")
             .expect("Failed to get lbl_size");
+        let box_progress: gtk::Box = builder
+            .get_object("box_progress")
+            .expect("Failed to get box_progress");
         let dropdown: ComboBoxText = builder
             .get_object("start_combo_box")
             .expect("Failed to get start_combo_box");
@@ -64,7 +71,9 @@ impl DetailPane {
             sw_details,
             lbl_date,
             lbl_size,
+            box_progress,
             dropdown,
+            progress_bars: Rc::new(RefCell::new(vec![])),
         }
     }
 
@@ -122,6 +131,24 @@ impl DetailPane {
     pub fn update_image(&self, pixbuf: Pixbuf) {
         self.img_current_map.set_from_pixbuf(Some(&pixbuf));
         self.img_current_map.set_visible(true);
+    }
+
+    pub fn add_progress_bar(&mut self, map_id: &String) {
+        let progress_bar = ProgressBar::new();
+        progress_bar.set_text(Some(map_id));
+        progress_bar.set_show_text(true);
+        self.box_progress.add(&progress_bar);
+        self.progress_bars.borrow_mut().push(progress_bar);
+        self.box_progress.show_all();
+    }
+
+    pub fn update_progress_bar(&self, map_id: &String, fraction: f64) {
+        let bars = self.progress_bars.borrow();
+        let bar = bars
+            .iter()
+            .find(|bar| map_id.contains(bar.get_text().unwrap().as_str()))
+            .unwrap();
+        bar.set_fraction(fraction);
     }
 }
 

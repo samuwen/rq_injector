@@ -29,6 +29,7 @@ pub struct Configuration {
     config_dir: PathBuf,
     image_cache_dir: PathBuf,
     image_resources_dir: PathBuf,
+    logs_dir: PathBuf,
     current_locale_choice: Nester,
     #[serde(skip)] // don't store this in the file. Makes the file hard to read.
     current_locale: Locale,
@@ -66,11 +67,13 @@ impl Default for Configuration {
         config_dir.push("QInjector");
         let mut image_cache_dir = config_dir.clone();
         image_cache_dir.push("images");
-        let mut image_resources_dir = std::env::current_dir().expect("No current dir found");
-        image_resources_dir.push("resources");
+        let mut logs_dir = config_dir.clone();
+        logs_dir.push("logs");
+        let mut resource_dir = std::env::current_dir().expect("No current dir found");
+        resource_dir.push("resources");
+        let mut image_resources_dir = resource_dir.clone();
         image_resources_dir.push("images");
-        let mut locale_resources_dir = std::env::current_dir().expect("No current dir found");
-        locale_resources_dir.push("resources");
+        let mut locale_resources_dir = resource_dir.clone();
         locale_resources_dir.push("locales");
         let locale = init_locale(locale_resources_dir, LocaleChoice::EnUs.get_name());
         // real tired of selecting these through the GUI haha
@@ -96,6 +99,7 @@ impl Default for Configuration {
             config_dir,
             image_cache_dir,
             image_resources_dir,
+            logs_dir,
             current_locale_choice: Nester::NestedEnum(LocaleChoice::EnUs),
             current_locale: locale,
         }

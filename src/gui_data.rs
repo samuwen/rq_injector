@@ -6,6 +6,7 @@ use crate::filter_bar::FilterBar;
 use crate::list_view::ListView;
 use crate::main_menu::MainMenu;
 use crate::output_dialog::OutputDialog;
+use crate::progress_dialog::ProgressDialog;
 use crate::quake_file::QuakeFile;
 use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
@@ -26,6 +27,7 @@ pub struct GuiData {
     pub config_dialog: ConfigDialog,
     pub output_dialog: OutputDialog,
     pub clear_cache_dialog: ClearCacheDialog,
+    pub progress_dialog: ProgressDialog,
 
     pub shared_install_state: Rc<RefCell<LocalMaps>>,
     pub shared_files_state: Rc<RefCell<Vec<QuakeFile>>>,
@@ -50,6 +52,7 @@ impl GuiData {
         let config_dialog = ConfigDialog::create_from_builder(&builder);
         let output_dialog = OutputDialog::create_from_builder(&builder);
         let clear_cache_dialog = ClearCacheDialog::create_from_builder(&builder);
+        let progress_dialog = ProgressDialog::create_from_builder(&builder);
         let configuration = Configuration::new();
         let app_title = configuration.current_locale().app_title().to_owned();
         let config_dir = configuration.config_dir().clone();
@@ -79,6 +82,7 @@ impl GuiData {
             config_dialog,
             output_dialog,
             clear_cache_dialog,
+            progress_dialog,
             shared_install_state,
             shared_files_state,
             shared_config_state,

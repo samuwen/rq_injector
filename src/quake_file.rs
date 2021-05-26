@@ -16,7 +16,10 @@ pub fn initialize_data(config_dir: PathBuf) -> Files {
             debug!("Local database found. Using");
             f
         }
-        Err(_) => get_database_from_remote(file_path),
+        Err(_) => {
+            get_database_from_remote(&file_path);
+            File::open(&file_path).expect("Catastrophe!")
+        }
     };
     let reader = BufReader::new(file);
     read_datastore(reader)

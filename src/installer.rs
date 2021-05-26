@@ -1,8 +1,10 @@
 use crate::configuration::*;
+use crate::download_progress::DownloadProgress;
 use crate::request_utils::get_map_from_remote;
 use getset::Getters;
+use glib::Sender;
 use log::*;
-use std::fs::{create_dir, create_dir_all, read_dir, remove_file, File};
+use std::fs::{create_dir, create_dir_all, read_dir, remove_dir_all, File};
 use std::io::{BufReader, Write};
 use zip::ZipArchive;
 
@@ -67,30 +69,22 @@ impl Installer {
         }
     }
 
-    pub fn install_map(&mut self, map_id: String) {
-        trace!("Started installing: {}", map_id);
-        if !self.is_map_zip_downloaded(&map_id) {
+    pub fn install_map(&mut self, sender: Sender<DownloadProgress>) {
+        trace!("Started installing: {}", self.map_id);
+        if !self.is_map_zip_downloaded(&self.map_id) {
             debug!("Zip not found. Grabbing from remote");
-            get_map_from_remote(&map_id, &self.download_dir);
+            get_map_from_remote(&self.map_id, &self.download_dir, sender);
         } else {
             debug!("Local file found. Stop all the downloading");
         }
-        self.unpack_zip_to_dir(&map_id);
-        trace!("Done installing: {}", map_id);
+        self.unpack_zip_to_dir();
+        trace!("Done installing: {}", self.map_id);
     }
 
-    pub fn uninstall_map(&mut self, files: Vec<FileInfo>) {
+    pub fn uninstall_map(&self) {
         trace!("Starting uninstalling: {}", self.map_id);
-        files.iter().for_each(|file| {
-            let file_path = format!("{}/id1/maps/{}", self.quake_dir, file.name());
-            match remove_file(&file_path) {
-                Ok(_) => debug!("Removed file at: {}", file_path),
-                Err(e) => {
-                    warn!("Couldn't remove file at: {}", file_path);
-                    warn!("Error: {}", e);
-                }
-            }
-        });
+        let dir_path = format!("{}/{}", self.quake_dir, self.map_id);
+        remove_dir_all(dir_path).expect("Couldn't find dir at location");
         trace!("Done uninstalling: {}", self.map_id);
     }
 
@@ -107,13 +101,13 @@ impl Installer {
         })
     }
 
-    fn unpack_zip_to_dir(&mut self, map_id: &String) {
-        let mut archive = self.get_zip_archive(map_id);
+    fn unpack_zip_to_dir(&mut self) {
+        let mut archive = self.get_zip_archive(&self.map_id);
         let has_extra_dirs = archive.file_names().any(|name| name.contains("/"));
+        let root_dir_name = format!("{}/{}", self.quake_dir, self.map_id);
         match has_extra_dirs {
             true => {
                 debug!("We have extra directories, lets create those");
-                let root_dir_name = format!("{}/{}", self.quake_dir, &map_id);
                 create_dir(&root_dir_name).expect("Quake dir probably not set");
                 match archive.extract(&root_dir_name) {
                     Ok(_) => debug!("Extraction went well"),
@@ -122,7 +116,6 @@ impl Installer {
             }
             false => {
                 debug!("No extra directories, creating extra dir structure");
-                let root_dir_name = format!("{}/{}", self.quake_dir, &map_id);
                 let map_dir_name = format!("{}/maps", &root_dir_name);
                 create_dir_all(&map_dir_name).expect("Quake dir probably not set");
                 let mut bsp_name = String::from("start");
@@ -149,8 +142,9 @@ impl Installer {
                 write!(f, "map {}", bsp_name).expect("Couldn't write auto file");
             }
         }
+        // TODO - get rid of files, do not need them
         let map_pack = MapPackBuilder::default()
-            .id(map_id.to_owned())
+            .id(self.map_id.to_owned())
             .files(Vec::new())
             .build()
             .unwrap();
