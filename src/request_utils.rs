@@ -66,11 +66,14 @@ fn get_remote_file_and_write_to_path<P: AsRef<Path> + Debug>(
                     false => 0.0,
                 };
                 debug!("progress: {} %", &percent * 100.0);
-                send_progress(&sender_opt, DownloadProgress::not_done(percent, file_name));
+                send_progress(
+                    &sender_opt,
+                    DownloadProgress::not_done_dl(percent, file_name),
+                );
                 std::io::copy(&mut &in_bytes[0..b], &mut file).expect("Failed to write");
                 total += b;
                 if total == content_length as usize {
-                    send_progress(&sender_opt, DownloadProgress::done(file_name));
+                    send_progress(&sender_opt, DownloadProgress::not_done_dl(100.0, file_name));
                     break 'byte_reader;
                 }
             }

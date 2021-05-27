@@ -70,17 +70,26 @@ impl Installer {
     }
 
     pub fn install_map(&mut self, sender: Sender<DownloadProgress>) {
+        let start_dl = std::time::Instant::now();
         trace!("Started installing: {}", self.map_id);
         if !self.is_map_zip_downloaded(&self.map_id) {
             debug!("Zip not found. Grabbing from remote");
-            get_map_from_remote(&self.map_id, &self.download_dir, sender);
+            get_map_from_remote(&self.map_id, &self.download_dir, sender.clone());
         } else {
             debug!("Local file found. Stop all the downloading");
             sender
-                .send(DownloadProgress::done(&self.map_id))
+                .send(DownloadProgress::not_done_dl(100.0, &self.map_id))
                 .expect("Failed to send");
         }
-        self.unpack_zip_to_dir();
+        let end_dl = std::time::Instant::now();
+        debug!("Total download time: {}", (end_dl - start_dl).as_millis());
+        let start_unpack = std::time::Instant::now();
+        self.unpack_zip_to_dir(sender);
+        let end_unpack = std::time::Instant::now();
+        debug!(
+            "Total unpack time: {}",
+            (end_unpack - start_unpack).as_millis()
+        );
         trace!("Done installing: {}", self.map_id);
     }
 
@@ -107,10 +116,11 @@ impl Installer {
         })
     }
 
-    fn unpack_zip_to_dir(&mut self) {
+    fn unpack_zip_to_dir(&mut self, sender: Sender<DownloadProgress>) {
         let mut archive = self.get_zip_archive(&self.map_id);
         let has_extra_dirs = archive.file_names().any(|name| name.contains("/"));
         let root_dir_name = format!("{}/{}", self.quake_dir, self.map_id);
+        let file_count = archive.len();
         match has_extra_dirs {
             true => {
                 debug!("We have extra directories, lets create those");
@@ -141,11 +151,20 @@ impl Installer {
                     let mut local_file = File::create(&file_path).unwrap();
                     std::io::copy(&mut file, &mut local_file)
                         .expect("Couldn't copy zip file to disk");
+                    sender
+                        .send(DownloadProgress::not_done_extract(
+                            i as f64 / file_count as f64,
+                            &self.map_id,
+                        ))
+                        .expect("Failed to send");
                     trace!("Successfully wrote {} to disk", name);
                 }
                 let auto_file_path = format!("{}/autoexec.cfg", &root_dir_name);
                 let mut f = File::create(&auto_file_path).expect("Couldn't create autoexec file");
                 write!(f, "map {}", bsp_name).expect("Couldn't write auto file");
+                sender
+                    .send(DownloadProgress::done(&self.map_id))
+                    .expect("Failed to send");
             }
         }
         // TODO - get rid of files, do not need them
