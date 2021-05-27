@@ -4,7 +4,7 @@ use log::*;
 use reqwest::blocking::*;
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::Path;
 
 pub fn get_database_from_remote<P: AsRef<Path> + Debug>(file_path: P) {
@@ -55,7 +55,7 @@ fn get_remote_file_and_write_to_path<P: AsRef<Path> + Debug>(
     let content_length = response.content_length().unwrap();
     let mut file = File::create(&path).expect("Couldn't create file");
 
-    let mut in_bytes = vec![0; 0x4000];
+    let mut in_bytes = [0; 0x4000];
     let mut total = 0;
     'byte_reader: loop {
         let file_name = path.as_ref().file_name().unwrap().to_str().unwrap();
@@ -67,7 +67,7 @@ fn get_remote_file_and_write_to_path<P: AsRef<Path> + Debug>(
                 };
                 debug!("progress: {} %", &percent * 100.0);
                 send_progress(&sender_opt, DownloadProgress::not_done(percent, file_name));
-                file.write_all(&in_bytes.as_slice()[0..b]).expect("fail");
+                std::io::copy(&mut &in_bytes[0..b], &mut file).expect("Failed to write");
                 total += b;
                 if total == content_length as usize {
                     send_progress(&sender_opt, DownloadProgress::done(file_name));

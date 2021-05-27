@@ -76,6 +76,9 @@ impl Installer {
             get_map_from_remote(&self.map_id, &self.download_dir, sender);
         } else {
             debug!("Local file found. Stop all the downloading");
+            sender
+                .send(DownloadProgress::done(&self.map_id))
+                .expect("Failed to send");
         }
         self.unpack_zip_to_dir();
         trace!("Done installing: {}", self.map_id);
@@ -84,7 +87,10 @@ impl Installer {
     pub fn uninstall_map(&self) {
         trace!("Starting uninstalling: {}", self.map_id);
         let dir_path = format!("{}/{}", self.quake_dir, self.map_id);
-        remove_dir_all(dir_path).expect("Couldn't find dir at location");
+        match remove_dir_all(&dir_path) {
+            Ok(_) => info!("Removed dir: {}", dir_path),
+            Err(e) => error!("Failed to remove dir: {} {}", dir_path, e),
+        };
         trace!("Done uninstalling: {}", self.map_id);
     }
 

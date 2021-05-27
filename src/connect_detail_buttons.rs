@@ -55,6 +55,7 @@ pub fn connect_install_map(gui_data: &GuiData) {
                 let mut installer = Installer::new()
                     .with_download_dir(download_dir)
                     .with_quake_dir(quake_dir)
+                    .with_map_id(map_id)
                     .with_path_string(path_string);
                 installer.install_map(progress_sender);
                 sender.send(installer).expect("Couldn't send");
