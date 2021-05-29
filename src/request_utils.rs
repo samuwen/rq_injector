@@ -4,7 +4,8 @@ use log::*;
 use reqwest::blocking::*;
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::Read;
+use std::io::prelude::*;
+use std::io::BufWriter;
 use std::path::Path;
 
 pub fn get_database_from_remote<P: AsRef<Path> + Debug>(file_path: P) {
@@ -12,7 +13,7 @@ pub fn get_database_from_remote<P: AsRef<Path> + Debug>(file_path: P) {
     let url = "https://www.quaddicted.com/reviews/quaddicted_database.xml".to_string();
     debug!("Database file path: {:?}", file_path);
     match get_remote_file_and_write_to_path(url, &file_path, None) {
-        Ok(f) => f,
+        Ok(_) => (),
         Err(e) => {
             // TODO - handle gracefully
             panic!("Something went wrong: {}", e);
@@ -47,16 +48,17 @@ fn get_remote_file_and_write_to_path<P: AsRef<Path> + Debug>(
     url: String,
     path: P,
     sender_opt: Option<Sender<DownloadProgress>>,
-) -> Result<File, std::io::Error> {
+) -> Result<(), std::io::Error> {
     let mut response = match get(&url) {
         Ok(r) => r,
         Err(e) => panic!("Failed to get from remote: {}", e),
     };
     let content_length = response.content_length().unwrap();
-    let mut file = File::create(&path).expect("Couldn't create file");
+    let mut file = BufWriter::new(File::create(&path).expect("Couldn't create file"));
 
     let mut in_bytes = [0; 0x4000];
     let mut total = 0;
+    let mut progress_counter = 0.0;
     'byte_reader: loop {
         let file_name = path.as_ref().file_name().unwrap().to_str().unwrap();
         match response.read(&mut in_bytes) {
@@ -65,11 +67,15 @@ fn get_remote_file_and_write_to_path<P: AsRef<Path> + Debug>(
                     true => (total as f64 / content_length as f64),
                     false => 0.0,
                 };
-                debug!("progress: {} %", &percent * 100.0);
-                send_progress(
-                    &sender_opt,
-                    DownloadProgress::not_done_dl(percent, file_name),
-                );
+                let h_percent = percent * 100.0;
+                if h_percent.floor() > progress_counter {
+                    progress_counter = h_percent.floor();
+                    debug!("progress: {} %", h_percent);
+                    send_progress(
+                        &sender_opt,
+                        DownloadProgress::not_done_dl(percent, file_name),
+                    );
+                }
                 std::io::copy(&mut &in_bytes[0..b], &mut file).expect("Failed to write");
                 total += b;
                 if total == content_length as usize {
@@ -82,8 +88,7 @@ fn get_remote_file_and_write_to_path<P: AsRef<Path> + Debug>(
             }
         }
     }
-
-    Ok(file)
+    file.flush()
 }
 
 fn send_progress(sender_opt: &Option<Sender<DownloadProgress>>, progress: DownloadProgress) {

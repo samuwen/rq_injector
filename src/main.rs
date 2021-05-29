@@ -62,20 +62,33 @@ fn initialize_application() {
     trace!("Starting application");
     let mut base_config_dir = config_dir().expect("No config dir found");
     base_config_dir.push("QInjector");
-    match std::fs::create_dir(&base_config_dir) {
-        Ok(_) => trace!("Made base config directory"),
-        Err(_) => trace!("Base config directory exists"),
-    }
-    init_dir_by_name(&mut base_config_dir, "images");
-    init_dir_by_name(&mut base_config_dir, "logs");
+    let base_needed = match std::fs::create_dir(&base_config_dir) {
+        Ok(_) => {
+            trace!("Made base config directory");
+            true
+        }
+        Err(_) => {
+            trace!("Base config directory exists");
+            false
+        }
+    };
+    let images_needed = init_dir_by_name(&mut base_config_dir, "images");
+    let logs_needed = init_dir_by_name(&mut base_config_dir, "logs");
 
-    initialize_gui();
+    // if we needed to remake directories pop the init modal
+    initialize_gui(base_needed || images_needed || logs_needed);
 }
 
-fn init_dir_by_name(config_dir: &mut PathBuf, name: &str) {
+fn init_dir_by_name(config_dir: &mut PathBuf, name: &str) -> bool {
     config_dir.push(name);
     match std::fs::create_dir(config_dir) {
-        Ok(_) => trace!("Made {} directory", name),
-        Err(_) => trace!("{} directory exists", name),
+        Ok(_) => {
+            trace!("Made {} directory", name);
+            true
+        }
+        Err(_) => {
+            trace!("{} directory exists", name);
+            false
+        }
     }
 }

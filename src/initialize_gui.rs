@@ -8,9 +8,8 @@ use crate::gui_data::GuiData;
 use crate::initializable::Initializable;
 use crate::list_view::populate_list_view;
 
-pub fn initialize_gui() {
+pub fn initialize_gui(first_time_init: bool) {
     let gui_data = GuiData::new();
-    create_list_view(&gui_data);
 
     initialize_menu(&gui_data);
     initialize_config_dialog(&gui_data);
@@ -19,12 +18,21 @@ pub fn initialize_gui() {
     initialize_filter_bar(&gui_data);
     let tree_view = gui_data.list_view.tree_view.clone();
     connect_selection_change::connect_selection_change(&gui_data, &tree_view);
+    create_list_view(&gui_data, first_time_init);
 }
 
-fn create_list_view(gui_data: &GuiData) {
+fn create_list_view(gui_data: &GuiData, first_time_init: bool) {
     let list_view = gui_data.list_view.clone();
 
     list_view.initialize(gui_data);
+    if first_time_init {
+        // show config dialog if its first time init, so the user sets their
+        // data while we grab the database
+        log::debug!("First time initialization");
+        let dialog = gui_data.config_dialog.clone();
+        let config_state = gui_data.shared_config_state.clone();
+        dialog.show(config_state);
+    }
     populate_list_view(gui_data);
     connect_search_event::connect_search_event(&gui_data);
 }

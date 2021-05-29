@@ -1,7 +1,10 @@
+use crate::configuration::Configuration;
 use crate::initializable::Initializable;
 use crate::locales::Locale;
 use gtk::prelude::*;
 use gtk::{Builder, Button, CheckButton, Dialog, Entry, Label};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct ConfigDialog {
@@ -106,6 +109,14 @@ impl ConfigDialog {
             chk_rogue,
             chk_hipnotic,
         }
+    }
+
+    pub fn show(&self, shared_config: Rc<RefCell<Configuration>>) {
+        let borrow = shared_config.borrow();
+        self.ent_quake_dir.set_text(borrow.quake_dir());
+        self.ent_download_dir.set_text(borrow.download_dir());
+        self.ent_quake_exe.set_text(borrow.quake_exe());
+        self.dlg_config.show_all();
     }
 }
 

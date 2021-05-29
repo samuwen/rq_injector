@@ -82,12 +82,15 @@ impl Installer {
                 .expect("Failed to send");
         }
         let end_dl = std::time::Instant::now();
-        debug!("Total download time: {}", (end_dl - start_dl).as_millis());
+        debug!(
+            "Total download time: {} milliseconds",
+            (end_dl - start_dl).as_millis()
+        );
         let start_unpack = std::time::Instant::now();
         self.unpack_zip_to_dir(sender);
         let end_unpack = std::time::Instant::now();
         debug!(
-            "Total unpack time: {}",
+            "Total unpack time: {} milliseconds",
             (end_unpack - start_unpack).as_millis()
         );
         trace!("Done installing: {}", self.map_id);
@@ -118,6 +121,7 @@ impl Installer {
 
     fn unpack_zip_to_dir(&mut self, sender: Sender<DownloadProgress>) {
         let mut archive = self.get_zip_archive(&self.map_id);
+        debug!("Archive: {:?}", archive.file_names().collect::<Vec<&str>>());
         let has_extra_dirs = archive.file_names().any(|name| name.contains("/"));
         let root_dir_name = format!("{}/{}", self.quake_dir, self.map_id);
         let file_count = archive.len();

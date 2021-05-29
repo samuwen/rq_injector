@@ -7,17 +7,10 @@ use log::*;
 pub fn connect_activate(gui_data: &GuiData) {
     trace!("Initializing config activation");
     let engine_config = gui_data.main_menu.menu_engine_configuration.clone();
-    let dialog = gui_data.config_dialog.dlg_config.clone();
-    let quake_dir_entry = gui_data.config_dialog.ent_quake_dir.clone();
-    let quake_exe_entry = gui_data.config_dialog.ent_quake_exe.clone();
-    let download_dir_entry = gui_data.config_dialog.ent_download_dir.clone();
-    let shared_config_state = gui_data.shared_config_state.clone();
+    let dialog = gui_data.config_dialog.clone();
+    let gui_data = gui_data.clone();
     engine_config.connect_activate(move |_| {
-        let borrow = shared_config_state.borrow();
-        quake_dir_entry.set_text(borrow.quake_dir());
-        download_dir_entry.set_text(borrow.download_dir());
-        quake_exe_entry.set_text(borrow.quake_exe());
-        dialog.show_all();
+        dialog.show(gui_data.shared_config_state.clone());
     });
 }
 
