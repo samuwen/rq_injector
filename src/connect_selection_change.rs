@@ -20,11 +20,15 @@ pub fn connect_selection_change(gui_data: &GuiData, tree_view: &gtk::TreeView) {
     let rec_detail_pane = detail_pane.clone();
     receiver.attach(None, move |image_loader| {
         let pixbuf = Pixbuf::from_file_at_size(image_loader.path(), 200, 200).unwrap();
-        let (model, iter) = rec_tree_view.get_selection().get_selected().unwrap();
-        let current_path_string = model.get_string_from_iter(&iter).unwrap().to_string();
-        if &current_path_string == image_loader.path_string() {
-            rec_detail_pane.update_image(pixbuf);
-        }
+        match rec_tree_view.get_selection().get_selected() {
+            Some((model, iter)) => {
+                let current_path_string = model.get_string_from_iter(&iter).unwrap().to_string();
+                if &current_path_string == image_loader.path_string() {
+                    rec_detail_pane.update_image(pixbuf);
+                }
+            }
+            None => (),
+        };
         THREAD_COUNTER.fetch_sub(1, Ordering::Relaxed);
         Continue(true)
     });

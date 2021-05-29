@@ -19,7 +19,7 @@ impl DownloadProgress {
 
     pub fn not_done_extract(percent: f64, file_name: &str) -> Self {
         Self {
-            percent: percent * 0.05,
+            percent: 0.95 + percent * 0.05,
             is_done: false,
             file_name: file_name.to_owned(),
         }

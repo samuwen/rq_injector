@@ -72,6 +72,7 @@ fn initialize_menu(gui_data: &GuiData) {
 fn initialize_filter_bar(gui_data: &GuiData) {
     let filter_bar = gui_data.filter_bar.clone();
     init_text(filter_bar, gui_data);
+    connect_detail_buttons::connect_install_random_map(gui_data);
 }
 
 fn init_text(element: impl Initializable, gui_data: &GuiData) {
