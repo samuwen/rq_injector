@@ -3,5 +3,5 @@
 ## An installer for quake mods written in Rust
 
 ### Get Started
-Clone the repo
-Cargo run
+1. Clone the repo
+2. Cargo run
