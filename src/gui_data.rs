@@ -43,7 +43,7 @@ impl GuiData {
         let window: gtk::Window = builder
             .get_object("window_main")
             .expect("Failed to get window_main");
-        let pixbuf = Pixbuf::from_file_at_size("resources/injector64.png", 64, 64).unwrap();
+        let pixbuf = Pixbuf::from_file_at_size("resources/images/injector64.png", 64, 64).unwrap();
         window.set_icon(Some(&pixbuf));
         let main_menu = MainMenu::create_from_builder(&builder);
         let filter_bar = FilterBar::create_from_builder(&builder);
@@ -93,11 +93,11 @@ impl GuiData {
 
 fn init_shared_images() -> [gdk_pixbuf::Pixbuf; 6] {
     [
-        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating0.png", 40, 8).unwrap(),
-        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating1.png", 40, 8).unwrap(),
-        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating2.png", 40, 8).unwrap(),
-        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating3.png", 40, 8).unwrap(),
-        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating4.png", 40, 8).unwrap(),
-        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/rating5.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/images/rating0.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/images/rating1.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/images/rating2.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/images/rating3.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/images/rating4.png", 40, 8).unwrap(),
+        gdk_pixbuf::Pixbuf::from_file_at_size("./resources/images/rating5.png", 40, 8).unwrap(),
     ]
 }

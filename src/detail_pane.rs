@@ -106,6 +106,7 @@ impl DetailPane {
         self.dropdown.set_sensitive(start_maps.len() > 2);
         let mut path = std::path::PathBuf::new();
         path.push("resources");
+        path.push("images");
         path.push("loading.gif");
         let pixbuf = PixbufAnimation::from_file(path).unwrap();
         self.set_spinner(pixbuf);

@@ -166,10 +166,6 @@ impl LocalMaps {
         self.maps.remove(map_pos);
     }
 
-    pub fn get_map_by_id(&self, id: &String) -> Option<&MapPack> {
-        self.maps.iter().find(|map| map.id() == id)
-    }
-
     pub fn is_map_installed(&self, id: &String) -> bool {
         self.maps.iter().any(|map| map.id() == id)
     }
