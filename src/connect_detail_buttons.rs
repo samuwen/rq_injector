@@ -1,6 +1,7 @@
 use crate::download_progress::DownloadProgress;
 use crate::game_player::*;
 use crate::gui_data::GuiData;
+use crate::initializable::Initializable;
 use crate::installer::Installer;
 use crate::quake_file::QuakeFile;
 use gio::prelude::*;
@@ -101,10 +102,12 @@ pub fn connect_play_button(gui_data: &GuiData) {
     let button = gui_data.detail_pane.btn_play.clone();
     let gui_data = gui_data.clone();
     let dropdown = gui_data.detail_pane.dropdown.clone();
-    let output_dialog = gui_data.output_dialog.dlg_output.clone();
+    let output_dialog = gui_data.output_dialog.clone();
+    let dlg_output = output_dialog.dlg_output.clone();
     let output_text = gui_data.output_dialog.txt_output.clone();
     let shared_files_state = gui_data.shared_files_state.clone();
     let shared_config_state = gui_data.shared_config_state.clone();
+    let con_shared_config_state = gui_data.shared_config_state.clone();
     receiver.attach(None, move |result| {
         let text: String = result
             .stdout
@@ -115,7 +118,8 @@ pub fn connect_play_button(gui_data: &GuiData) {
             })
             .collect();
         output_text.get_buffer().unwrap().set_text(&text);
-        output_dialog.show_all();
+        output_dialog.init_text(shared_config_state.borrow().current_locale());
+        dlg_output.show_all();
         Continue(true)
     });
     button.connect_clicked(move |_| {
@@ -130,8 +134,8 @@ pub fn connect_play_button(gui_data: &GuiData) {
         };
         let map_id =
             get_selected_map_id(&gui_data).expect("Nothing was selected, so this shouldn't happen");
-        let quake_exe = shared_config_state.borrow().quake_exe().to_owned();
-        let quake_dir = shared_config_state.borrow().quake_dir().to_owned();
+        let quake_exe = con_shared_config_state.borrow().quake_exe().to_owned();
+        let quake_dir = con_shared_config_state.borrow().quake_dir().to_owned();
         let command_line_opt = shared_files_state
             .borrow()
             .iter()

@@ -50,7 +50,8 @@ pub fn connect_selection_change(gui_data: &GuiData, tree_view: &gtk::TreeView) {
                 let is_local = shared_install_state.borrow().is_map_installed(&id_string);
                 let is_offline = *shared_config_state.borrow().is_offline();
                 let image_dir = shared_config_state.borrow().image_cache_dir().clone();
-                detail_pane.update(&file, is_local, is_offline);
+                let date_format = shared_config_state.borrow().get_date_format();
+                detail_pane.update(&file, is_local, is_offline, date_format);
                 let sender = sender.clone();
                 thread::Builder::new()
                     .name(format!("select-{}", THREAD_COUNTER.load(Ordering::Relaxed)))

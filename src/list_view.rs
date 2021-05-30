@@ -1,5 +1,8 @@
 use crate::gui_data::GuiData;
+use crate::initializable::Initializable;
+use crate::locales::Locale;
 use crate::quake_file::{initialize_data, Files};
+use chrono::NaiveDate;
 use glib::Type;
 use glib::{Continue, MainContext, Receiver, Sender, PRIORITY_DEFAULT};
 use gtk::prelude::*;
@@ -55,6 +58,7 @@ impl ListView {
         let shared_install_state = gui_data.shared_install_state.clone();
         let shared_files_state = gui_data.shared_files_state.clone();
         let shared_images = gui_data.shared_images.clone();
+        let shared_config_state = gui_data.shared_config_state.clone();
         let col_indices = [0, 1, 2, 3, 4, 5, 6];
         for file in shared_files_state.borrow().iter() {
             let rating = match u8::from_str_radix(file.rating(), 10) {
@@ -62,18 +66,39 @@ impl ListView {
                 Err(_) => 0,
             };
             let rating_image = &shared_images.borrow()[rating as usize];
+            let date_format = shared_config_state.borrow().get_date_format();
+            let naive_date = NaiveDate::parse_from_str(file.date(), "%d.%m.%Y").unwrap();
+            let date = naive_date.format(&date_format).to_string();
             let values: [&dyn ToValue; 7] = [
                 &shared_install_state.borrow().is_map_installed(file.id()),
                 file.id(),
                 file.title(),
                 file.author(),
-                file.date(),
+                &date,
                 rating_image,
                 &rating,
             ];
             self.list_store
                 .set(&self.list_store.append(), &col_indices, &values);
         }
+    }
+
+    fn set_col_title(&self, column: Columns, title: &String) {
+        let col = self
+            .tree_view
+            .get_column(column as i32)
+            .expect("No column!");
+        col.set_title(title);
+    }
+}
+
+impl Initializable for ListView {
+    fn init_text(&self, locale: &Locale) {
+        self.set_col_title(Columns::Name, locale.id_column_name());
+        self.set_col_title(Columns::Title, locale.title_column_name());
+        self.set_col_title(Columns::Author, locale.author_column_name());
+        self.set_col_title(Columns::Released, locale.released_column_name());
+        self.set_col_title(Columns::Rating, locale.rating_column_name());
     }
 }
 
@@ -207,13 +232,16 @@ fn date_sort_fn(model: &TreeModel, row_1: &TreeIter, row_2: &TreeIter) -> std::c
     date_1.cmp(&date_2)
 }
 
-fn get_date(val: glib::Value) -> chrono::NaiveDate {
+fn get_date(val: glib::Value) -> NaiveDate {
+    let valid_formats = vec!["%d.%m.%Y", "%d-%m-%Y", "%m-%d-%Y", "%m.%d.%Y"];
     let val: String = val.get().unwrap().unwrap();
-    let date_res = chrono::NaiveDate::parse_from_str(&val, "%d.%m.%Y");
-    match date_res {
-        Ok(d) => d,
-        Err(e) => panic!("{}", e),
+    for format in valid_formats {
+        let date_res = NaiveDate::parse_from_str(&val, format);
+        if let Ok(date) = date_res {
+            return date;
+        }
     }
+    panic!("Invalid date format for value {}", val);
 }
 
 enum Columns {

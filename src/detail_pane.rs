@@ -77,13 +77,13 @@ impl DetailPane {
         }
     }
 
-    pub fn update(&self, file: &QuakeFile, is_local: bool, is_offline: bool) {
+    pub fn update(&self, file: &QuakeFile, is_local: bool, is_offline: bool, date_format: String) {
         trace!("Updating detail view");
         self.lbl_title.set_text(file.title());
         self.lbl_description.set_text(file.description());
         let naive_date = NaiveDate::parse_from_str(file.date(), "%d.%m.%Y").unwrap();
         self.lbl_date
-            .set_text(&naive_date.format("%m-%d-%Y").to_string());
+            .set_text(&naive_date.format(&date_format).to_string());
         let size_text = convert_size_string(file.size());
         self.lbl_size.set_text(&size_text);
         self.btn_install.set_sensitive(!is_local && !is_offline);

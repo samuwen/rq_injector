@@ -29,10 +29,12 @@ pub struct Configuration {
     config_dir: PathBuf,
     image_cache_dir: PathBuf,
     image_resources_dir: PathBuf,
+    locale_resources_dir: PathBuf,
     logs_dir: PathBuf,
     current_locale_choice: Nester,
     #[serde(skip)] // don't store this in the file. Makes the file hard to read.
     current_locale: Locale,
+    date_format: String,
 }
 
 impl Configuration {
@@ -45,6 +47,7 @@ impl Configuration {
         let mut locale_resources_dir = std::env::current_dir().expect("No current dir found");
         locale_resources_dir.push("resources");
         locale_resources_dir.push("locales");
+        config.locale_resources_dir = locale_resources_dir.clone();
         let locale = init_locale(
             locale_resources_dir.clone(),
             config.current_locale_choice.get_choice(),
@@ -58,6 +61,29 @@ impl Configuration {
         let mut file_path = self.config_dir.clone();
         file_path.push(CONFIG_FILE_NAME);
         write_to_file(file_path, self, "config");
+    }
+
+    pub fn set_language(&mut self, language: String) {
+        info!("Changing language to {}", language);
+        self.current_locale_choice = Nester::Other(language);
+        let locale = init_locale(
+            self.locale_resources_dir.clone(),
+            self.current_locale_choice.get_choice(),
+        );
+        self.current_locale = locale;
+    }
+
+    pub fn get_date_format(&self) -> String {
+        String::from(match self.date_format.as_str() {
+            "mm-dd-yyyy" => "%m-%d-%Y",
+            "mm.dd.yyyy" => "%m.%d.%Y",
+            "dd-mm-yyyy" => "%d-%m-%Y",
+            "dd.mm.yyyy" => "%d.%m.%Y",
+            _ => {
+                error!("Invalid format provided. Defaulting to USA style");
+                "%m-%d-%Y"
+            }
+        })
     }
 }
 
@@ -75,7 +101,7 @@ impl Default for Configuration {
         image_resources_dir.push("images");
         let mut locale_resources_dir = resource_dir.clone();
         locale_resources_dir.push("locales");
-        let locale = init_locale(locale_resources_dir, LocaleChoice::EnUs.get_name());
+        let locale = init_locale(locale_resources_dir.clone(), LocaleChoice::EnUs.get_name());
         // real tired of selecting these through the GUI haha
         let quake_dir = match cfg!(debug_assertions) {
             true => "/home/samuwen/.steam/debian-installation/steamapps/common/Quake".to_string(),
@@ -102,6 +128,8 @@ impl Default for Configuration {
             logs_dir,
             current_locale_choice: Nester::NestedEnum(LocaleChoice::EnUs),
             current_locale: locale,
+            locale_resources_dir,
+            date_format: String::from("mm-dd-yyyy"),
         }
     }
 }

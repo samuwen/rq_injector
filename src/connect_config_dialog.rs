@@ -1,4 +1,5 @@
 use crate::gui_data::GuiData;
+use crate::initializable::Initializable;
 use crate::locales::Locale;
 use gtk::prelude::*;
 use gtk::{Button, Dialog, Entry, FileChooserAction, ResponseType};
@@ -8,8 +9,10 @@ pub fn connect_activate(gui_data: &GuiData) {
     trace!("Initializing config activation");
     let engine_config = gui_data.main_menu.menu_engine_configuration.clone();
     let dialog = gui_data.config_dialog.clone();
+    let shared_config = gui_data.shared_config_state.clone();
     let gui_data = gui_data.clone();
     engine_config.connect_activate(move |_| {
+        dialog.init_text(shared_config.borrow().current_locale());
         dialog.show(gui_data.shared_config_state.clone());
     });
 }
@@ -28,19 +31,51 @@ pub fn connect_ok(gui_data: &GuiData) {
     let dialog = gui_data.config_dialog.clone();
     let button = dialog.btn_ok.clone();
     let shared_config_state = gui_data.shared_config_state.clone();
+    let detail_pane = gui_data.detail_pane.clone();
+    let filter_bar = gui_data.filter_bar.clone();
+    let main_menu = gui_data.main_menu.clone();
+    let list_view = gui_data.list_view.clone();
     button.connect_clicked(move |_| {
         trace!("Config ok clicked");
         let mut borrow = shared_config_state.borrow_mut();
-        let quake_exe = dialog.ent_quake_exe.get_buffer().get_text();
-        let quake_dir = dialog.ent_quake_dir.get_buffer().get_text();
-        let download_dir = dialog.ent_download_dir.get_buffer().get_text();
-        let hip_checked = dialog.chk_hipnotic.get_active();
-        let rogue_checked = dialog.chk_rogue.get_active();
+        let quake_exe = dialog
+            .engine_config_tab
+            .ent_quake_exe
+            .get_buffer()
+            .get_text();
+        let quake_dir = dialog
+            .engine_config_tab
+            .ent_quake_dir
+            .get_buffer()
+            .get_text();
+        let download_dir = dialog
+            .engine_config_tab
+            .ent_download_dir
+            .get_buffer()
+            .get_text();
+        let hip_checked = dialog.engine_config_tab.chk_hipnotic.get_active();
+        let rogue_checked = dialog.engine_config_tab.chk_rogue.get_active();
+        let language = dialog
+            .personal_config_tab
+            .dropdown_choose_language
+            .get_active_text()
+            .unwrap();
+        let date_format = dialog
+            .personal_config_tab
+            .dropdown_choose_dateformat
+            .get_active_text()
+            .unwrap();
         borrow.set_quake_exe(quake_exe);
         borrow.set_quake_dir(quake_dir);
         borrow.set_download_dir(download_dir);
         borrow.set_hip_installed(hip_checked);
         borrow.set_rogue_installed(rogue_checked);
+        borrow.set_date_format(date_format.to_string());
+        borrow.set_language(language.to_string());
+        detail_pane.init_text(borrow.current_locale());
+        filter_bar.init_text(borrow.current_locale());
+        main_menu.init_text(borrow.current_locale());
+        list_view.init_text(borrow.current_locale());
         dialog.dlg_config.clone().hide();
     });
 }
@@ -50,8 +85,8 @@ pub fn connect_selects(gui_data: &GuiData) {
     let dialog = gui_data.config_dialog.clone();
     let config = gui_data.shared_config_state.clone();
     connect_input(
-        dialog.btn_quake_dir.clone(),
-        dialog.ent_quake_dir.clone(),
+        dialog.engine_config_tab.btn_quake_dir.clone(),
+        dialog.engine_config_tab.ent_quake_dir.clone(),
         dialog.dlg_config.clone(),
         config
             .borrow()
@@ -62,8 +97,8 @@ pub fn connect_selects(gui_data: &GuiData) {
         config.borrow().current_locale().clone(),
     );
     connect_input(
-        dialog.btn_download_dir.clone(),
-        dialog.ent_download_dir.clone(),
+        dialog.engine_config_tab.btn_download_dir.clone(),
+        dialog.engine_config_tab.ent_download_dir.clone(),
         dialog.dlg_config.clone(),
         config
             .borrow()
@@ -74,8 +109,8 @@ pub fn connect_selects(gui_data: &GuiData) {
         config.borrow().current_locale().clone(),
     );
     connect_input(
-        dialog.btn_quake_exe.clone(),
-        dialog.ent_quake_exe.clone(),
+        dialog.engine_config_tab.btn_quake_exe.clone(),
+        dialog.engine_config_tab.ent_quake_exe.clone(),
         dialog.dlg_config.clone(),
         config
             .borrow()
